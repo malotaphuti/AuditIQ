@@ -1,0 +1,165 @@
+<header class="page-header">
+  <div>
+    <h1>Overview</h1>
+    <p class="subtitle">
+      Live figures computed from the AuditIQ database
+      @if (data(); as d) {
+        · updated {{ d.generatedAt | date: 'HH:mm:ss' }}
+      }
+    </p>
+  </div>
+  <button mat-stroked-button (click)="load()" [disabled]="loading()">
+    <mat-icon>refresh</mat-icon> Refresh
+  </button>
+</header>
+
+@if (loading() && !data()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading overview" />
+}
+
+@if (error()) {
+  <app-empty-state icon="cloud_off" title="Overview unavailable" [message]="error()!">
+    <button mat-flat-button (click)="load()">Try again</button>
+  </app-empty-state>
+}
+
+@if (data(); as d) {
+  <section class="kpis" aria-label="Key indicators">
+    <article class="kpi">
+      <span class="kpi-label">Transactions processed</span>
+      <span class="kpi-value">{{ d.transactions.total | number }}</span>
+      <span class="kpi-foot">
+        @if (d.transactions.firstTransactionAt) {
+          {{ d.transactions.firstTransactionAt | date: 'mediumDate' }} – {{ d.transactions.lastTransactionAt | date: 'mediumDate' }}
+        } @else {
+          No transactions loaded
+        }
+      </span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Total transaction value</span>
+      <span class="kpi-value">{{ d.transactions.totalValue | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }}</span>
+      <span class="kpi-foot">Synthetic ZAR</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Potential exceptions</span>
+      <span class="kpi-value">{{ d.exceptions.total | number }}</span>
+      <span class="kpi-foot">{{ d.exceptions.bySource['RULE'] | number }} rule · {{ d.exceptions.bySource['ML'] | number }} model</span>
+    </article>
+    <article class="kpi accent-bad">
+      <span class="kpi-label">High-priority findings</span>
+      <span class="kpi-value">{{ d.exceptions.highPriority | number }}</span>
+      <span class="kpi-foot">High + critical severity</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Exception rate</span>
+      <span class="kpi-value">{{ d.exceptions.exceptionRatePercent | number: '1.2-2' }}%</span>
+      <span class="kpi-foot">Flagged transactions / processed</span>
+    </article>
+    <article class="kpi" [class]="'tone-' + pipelineHealth().tone">
+      <span class="kpi-label">Pipeline health</span>
+      <span class="kpi-value small">{{ pipelineHealth().label | humanize }}</span>
+      <span class="kpi-foot">
+        {{ d.pipeline.successfulRuns }} of {{ d.pipeline.totalRuns }} runs successful
+      </span>
+    </article>
+  </section>
+
+  <section class="grid">
+    <article class="panel span-2">
+      <h2>Transaction trend</h2>
+      @if (d.transactionTrend.length === 0) {
+        <app-empty-state
+          icon="show_chart"
+          title="No transaction data yet"
+          message="The trend appears once the ingestion pipeline has loaded transactions."
+        />
+      } @else {
+        <p class="muted">{{ d.transactionTrend.length }} days of activity in the latest 90-day window.</p>
+      }
+    </article>
+
+    <article class="panel">
+      <h2>Risk distribution</h2>
+      @if (d.riskDistribution.length === 0) {
+        <app-empty-state icon="donut_large" title="No exceptions yet"
+          message="Run the audit rules or anomaly model to populate risk categories." />
+      } @else {
+        <ul class="bars">
+          @for (r of d.riskDistribution; track r.category) {
+            <li><span>{{ r.category | humanize }}</span><strong>{{ r.count | number }}</strong></li>
+          }
+        </ul>
+      }
+    </article>
+
+    <article class="panel">
+      <h2>Investigation status</h2>
+      <p class="muted">{{ investigationTotal() | number }} investigations</p>
+      <ul class="status-list">
+        @for (row of investigationRows(); track row.status) {
+          <li>
+            <div class="status-row"><span>{{ row.label }}</span><strong>{{ row.count | number }}</strong></div>
+            <mat-progress-bar mode="determinate" [value]="row.percent" [attr.aria-label]="row.label" />
+          </li>
+        }
+      </ul>
+    </article>
+
+    <article class="panel span-2">
+      <h2>Recent exceptions</h2>
+      @if (d.recentExceptions.length === 0) {
+        <app-empty-state icon="fact_check" title="No exceptions recorded"
+          message="Exceptions appear here after audit rules or the anomaly model have run." />
+      } @else {
+        <table mat-table [dataSource]="d.recentExceptions" class="dense">
+          <ng-container matColumnDef="exceptionRef">
+            <th mat-header-cell *matHeaderCellDef>Reference</th>
+            <td mat-cell *matCellDef="let e">{{ e.exceptionRef }}</td>
+          </ng-container>
+          <ng-container matColumnDef="severity">
+            <th mat-header-cell *matHeaderCellDef>Severity</th>
+            <td mat-cell *matCellDef="let e"><span class="chip" [class]="'sev-' + e.severity">{{ e.severity | humanize }}</span></td>
+          </ng-container>
+          <ng-container matColumnDef="riskCategory">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let e">{{ e.riskCategory | humanize }}</td>
+          </ng-container>
+          <ng-container matColumnDef="accountId">
+            <th mat-header-cell *matHeaderCellDef>Account</th>
+            <td mat-cell *matCellDef="let e">{{ e.accountId }}</td>
+          </ng-container>
+          <ng-container matColumnDef="source">
+            <th mat-header-cell *matHeaderCellDef>Detected by</th>
+            <td mat-cell *matCellDef="let e">{{ e.detectionSource === 'RULE' ? e.ruleId : 'Anomaly model' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="detectedAt">
+            <th mat-header-cell *matHeaderCellDef>Detected</th>
+            <td mat-cell *matCellDef="let e">{{ e.detectedAt | date: 'short' }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="exceptionColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: exceptionColumns"></tr>
+        </table>
+      }
+    </article>
+
+    <article class="panel">
+      <h2>Recent audit activity</h2>
+      @if (d.recentActivity.length === 0) {
+        <app-empty-state icon="history" title="No activity" message="Actions you take are recorded here." />
+      } @else {
+        <ol class="activity">
+          @for (a of d.recentActivity; track a.id) {
+            <li>
+              <span class="dot" [class.fail]="a.outcome === 'FAILURE'" aria-hidden="true"></span>
+              <div>
+                <div class="activity-title">{{ a.action | humanize }}</div>
+                <div class="activity-meta">{{ a.username ?? 'system' }} · {{ a.occurredAt | date: 'short' }}</div>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </article>
+  </section>
+}

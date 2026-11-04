@@ -1,0 +1,71 @@
+<div class="login-page">
+  <section class="hero" aria-hidden="true">
+    <div class="hero-inner">
+      <div class="brand"><span class="brand-mark">IQ</span> AuditIQ</div>
+      <h1>Audit &amp; risk intelligence for internal audit teams.</h1>
+      <ul>
+        <li><mat-icon>verified</mat-icon> Automated data preparation and quality checks</li>
+        <li><mat-icon>rule</mat-icon> SQL audit rules and anomaly detection</li>
+        <li><mat-icon>menu_book</mat-icon> Evidence-grounded AI with policy citations</li>
+        <li><mat-icon>how_to_reg</mat-icon> Human review of every outcome</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2>Sign in</h2>
+      <p class="muted">Use the account issued by your administrator.</p>
+
+      @if (expired()) {
+        <div class="notice" role="status"><mat-icon>schedule</mat-icon> Your session expired. Please sign in again.</div>
+      }
+      @if (error()) {
+        <div class="notice error" role="alert"><mat-icon>error_outline</mat-icon> {{ error() }}</div>
+      }
+
+      <mat-form-field>
+        <mat-label>Username</mat-label>
+        <input matInput formControlName="username" autocomplete="username" autofocus />
+        @if (form.controls.username.hasError('required')) {
+          <mat-error>Username is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          formControlName="password"
+          [type]="hidePassword() ? 'password' : 'text'"
+          autocomplete="current-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="hidePassword.set(!hidePassword())"
+          [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+        >
+          <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>Password is required</mat-error>
+        }
+      </mat-form-field>
+
+      <button mat-flat-button type="submit" class="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Sign in
+        }
+      </button>
+
+      <p class="disclaimer">
+        AuditIQ processes synthetic data only. Findings are potential audit exceptions for human review, not
+        determinations of wrongdoing.
+      </p>
+    </form>
+  </section>
+</div>

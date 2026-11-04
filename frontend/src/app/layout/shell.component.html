@@ -1,0 +1,86 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+    [attr.role]="isHandset() ? 'dialog' : 'navigation'"
+  >
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">IQ</span>
+      <div>
+        <div class="brand-name">AuditIQ</div>
+        <div class="brand-sub">Audit &amp; Risk Intelligence</div>
+      </div>
+    </div>
+
+    <mat-nav-list aria-label="Main navigation">
+      @for (item of navItems(); track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          #rla="routerLinkActive"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          (click)="isHandset() && drawer.close()"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+          @if (item.plannedPhase) {
+            <span matListItemMeta class="phase-tag" [matTooltip]="'Delivered in Phase ' + item.plannedPhase">
+              P{{ item.plannedPhase }}
+            </span>
+          }
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="synthetic-note">
+      <mat-icon inline>science</mat-icon> Synthetic data only
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    <mat-toolbar class="toolbar">
+      @if (isHandset()) {
+        <button mat-icon-button (click)="drawer.toggle()" aria-label="Toggle navigation">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <span class="spacer"></span>
+
+      @if (status(); as s) {
+        <span
+          class="status"
+          [class.down]="s.database !== 'UP' || s.analyticsService !== 'UP'"
+          [matTooltip]="'Database: ' + s.database + ' · Analytics/AI service: ' + s.analyticsService"
+          role="status"
+        >
+          <span class="dot" aria-hidden="true"></span>
+          {{ s.database === 'UP' && s.analyticsService === 'UP' ? 'All systems operational' : 'Service degraded' }}
+        </span>
+      }
+
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-button" aria-label="User menu">
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="user-text">
+          <span class="user-name">{{ user()?.fullName }}</span>
+          <span class="user-role">{{ user()?.roles?.[0] | roleLabel }}</span>
+        </span>
+      </button>
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <div class="menu-header" mat-menu-item disabled>
+          <span>{{ user()?.username }} · {{ user()?.email }}</span>
+        </div>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="page" id="main">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

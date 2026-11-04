@@ -1,0 +1,71 @@
+name: auditiq
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auditiq}
+      POSTGRES_USER: ${POSTGRES_USER:-auditiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Exposed so Power BI Desktop can connect to the analytics views.
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./analytics-service
+    environment:
+      ANALYTICS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-auditiq}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auditiq}
+      ANALYTICS_SERVICE_KEY: ${ANALYTICS_SERVICE_KEY:?Set ANALYTICS_SERVICE_KEY in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Internal only – reachable from the backend, not published to the host.
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-auditiq}
+      DB_USERNAME: ${POSTGRES_USER:-auditiq}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+      ANALYTICS_SERVICE_KEY: ${ANALYTICS_SERVICE_KEY}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_AUDITOR_PASSWORD: ${BOOTSTRAP_AUDITOR_PASSWORD:-}
+      BOOTSTRAP_MANAGER_PASSWORD: ${BOOTSTRAP_MANAGER_PASSWORD:-}
+      AUDITIQ_SELF_REGISTRATION: ${AUDITIQ_SELF_REGISTRATION:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      analytics-service:
+        condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

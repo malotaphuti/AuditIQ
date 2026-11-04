@@ -1,0 +1,31 @@
+# Secrets
+.env
+*.env.local
+
+# Java
+backend/target/
+
+# Node / Angular
+node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+analytics-service/artifacts/
+
+# Data generated at runtime
+data/generated/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,134 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background: var(--aiq-surface);
+}
+
+.hero {
+  background: linear-gradient(160deg, var(--aiq-navy) 0%, #12345f 100%);
+  color: #dbe4f0;
+  display: flex;
+  align-items: center;
+  padding: 48px;
+}
+
+.hero-inner {
+  max-width: 480px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 40px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--aiq-green);
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.25;
+  color: #fff;
+  margin: 0 0 32px;
+  font-weight: 600;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+
+li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+
+  mat-icon {
+    color: var(--aiq-green-light);
+  }
+}
+
+.panel {
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  background: var(--aiq-card);
+  border: 1px solid var(--aiq-border);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 30px rgba(11, 31, 58, 0.06);
+
+  h2 {
+    margin: 0 0 4px;
+    color: var(--aiq-text);
+  }
+}
+
+.muted {
+  color: var(--aiq-text-muted);
+  margin: 0 0 20px;
+}
+
+.notice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef4fb;
+  color: var(--aiq-navy);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+
+  &.error {
+    background: #fdecec;
+    color: #9b1c1c;
+  }
+}
+
+.submit {
+  height: 44px;
+  margin-top: 4px;
+
+  mat-spinner {
+    margin: 0 auto;
+  }
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: var(--aiq-text-muted);
+  margin: 20px 0 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 899px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    display: none;
+  }
+}

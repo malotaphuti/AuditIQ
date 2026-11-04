@@ -1,0 +1,10 @@
+auditiq:
+  security:
+    jwt-secret: test-only-secret-that-is-long-enough-for-hs256-signing
+  bootstrap:
+    admin-password: Admin#Passw0rd!
+    auditor-password: Auditor#Passw0rd!
+    manager-password: Manager#Passw0rd!
+  analytics-service:
+    base-url: http://localhost:1
+    service-key: test-service-key
