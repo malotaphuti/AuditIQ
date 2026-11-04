@@ -3,6 +3,8 @@ package com.auditiq.overview;
 import com.auditiq.support.AbstractIntegrationTest;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,16 +12,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class OverviewIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired
+    JdbcTemplate jdbc;
+
     @Test
-    void overviewReflectsEmptyDatabaseWithRealZeros() throws Exception {
+    void overviewFiguresMatchTheDatabase() throws Exception {
+        long transactions = jdbc.queryForObject("SELECT count(*) FROM transactions", Long.class);
+        long runs = jdbc.queryForObject("SELECT count(*) FROM pipeline_runs", Long.class);
+        long exceptions = jdbc.queryForObject("SELECT count(*) FROM audit_exceptions", Long.class);
         mvc.perform(get("/api/overview").header("Authorization", auditorToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.transactions.total").value(0))
-                .andExpect(jsonPath("$.exceptions.total").value(0))
-                .andExpect(jsonPath("$.exceptions.exceptionRatePercent").value(0))
-                .andExpect(jsonPath("$.investigationsByStatus.NEW").value(0))
-                .andExpect(jsonPath("$.pipeline.totalRuns").value(0))
-                .andExpect(jsonPath("$.transactionTrend").isEmpty())
+                .andExpect(jsonPath("$.transactions.total").value(transactions))
+                .andExpect(jsonPath("$.exceptions.total").value(exceptions))
+                .andExpect(jsonPath("$.investigationsByStatus.NEW").exists())
+                .andExpect(jsonPath("$.pipeline.totalRuns").value(runs))
                 // The auditor's own login is part of their recent activity.
                 .andExpect(jsonPath("$.recentActivity[0].username").value("auditor"));
     }

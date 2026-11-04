@@ -7,6 +7,9 @@ describe('shared helpers', () => {
   it('humanizes enum-style values', () => {
     const pipe = new HumanizePipe();
     expect(pipe.transform('LOGIN_SUCCESS')).toBe('Login success');
+    expect(pipe.transform('IT_SERVICES')).toBe('IT services');
+    expect(pipe.transform('POS')).toBe('POS');
+    expect(pipe.transform('MISSING_TRANSACTION_ID')).toBe('Missing transaction ID');
     expect(pipe.transform('')).toBe('');
     expect(pipe.transform(null)).toBe('');
   });

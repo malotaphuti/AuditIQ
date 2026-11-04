@@ -121,3 +121,149 @@ export interface SystemStatus {
   analyticsService: 'UP' | 'DOWN' | 'DEGRADED';
   version: string;
 }
+
+export interface PipelineRunSummary {
+  id: number;
+  runRef: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
+  triggerType: string;
+  triggeredBy?: string;
+  source?: string;
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+  totalRecords?: number;
+  validRecords?: number;
+  rejectedRecords?: number;
+  duplicateRecords?: number;
+}
+
+export interface PipelineStep {
+  name: string;
+  status: 'RUNNING' | 'SUCCESS' | 'FAILED';
+  startedAt: string;
+  durationMs?: number;
+  rows?: number;
+  message?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface QualityReport {
+  pipelineRunId: number;
+  runRef: string;
+  totalRecords: number;
+  validRecords: number;
+  rejectedRecords: number;
+  duplicateRecords: number;
+  missingValueTotal: number;
+  missingValues: Record<string, number>;
+  rejectionReasons: Record<string, number>;
+  processingDurationMs: number;
+  status: string;
+  createdAt: string;
+  validRatePercent: number;
+}
+
+export interface PipelineRunDetail {
+  run: PipelineRunSummary;
+  parameters: Record<string, unknown>;
+  steps: PipelineStep[];
+  errorMessage?: string;
+  qualityReport?: QualityReport;
+}
+
+export interface RunPipelineRequest {
+  source: 'GENERATED' | 'CSV';
+  seed?: number | null;
+  transactionCount?: number | null;
+  folder?: string | null;
+}
+
+export interface TransactionRow {
+  transactionId: string;
+  accountId: string;
+  customerId: string;
+  transactionDate: string;
+  amount: number;
+  currency: string;
+  transactionType: string;
+  channel: string;
+  merchantId?: string;
+  merchantName?: string;
+  merchantCategory?: string;
+  location?: string;
+  accountType: string;
+  status: string;
+  approvalThreshold?: number;
+  approvalStatus: string;
+}
+
+export interface TransactionDetail {
+  transaction: TransactionRow;
+  account: {
+    accountId: string;
+    customerId: string;
+    accountType: string;
+    status: string;
+    branch?: string;
+    openedDate: string;
+    lastActivityBeforeWindow?: string;
+    transactionCount: number;
+    averageAmount?: number;
+    firstTransactionAt?: string;
+    lastTransactionAt?: string;
+  };
+  merchant?: { merchantId: string; merchantName: string; category: string; city?: string; vendor: boolean };
+  lineage: { pipelineRunId?: number; runRef?: string; loadedAt: string; originalAmount?: number; originalCurrency?: string };
+  exceptions: {
+    id: number;
+    exceptionRef: string;
+    detectionSource: string;
+    ruleId?: string;
+    severity: string;
+    riskCategory: string;
+    status: string;
+    detectedAt: string;
+  }[];
+}
+
+export interface Bucket {
+  key: string;
+  count: number;
+  value: number;
+}
+
+export interface TransactionAnalytics {
+  totals: {
+    count: number;
+    value: number;
+    averageValue: number;
+    accounts: number;
+    merchants: number;
+    firstTransactionAt?: string;
+    lastTransactionAt?: string;
+  };
+  monthly: Bucket[];
+  byCategory: Bucket[];
+  byChannel: Bucket[];
+  byType: Bucket[];
+  byStatus: Bucket[];
+  byLocation: Bucket[];
+}
+
+export interface TransactionQuery {
+  q?: string;
+  accountId?: string;
+  type?: string;
+  channel?: string;
+  category?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  minAmount?: number | null;
+  maxAmount?: number | null;
+  sort?: 'transactionDate' | 'amount' | 'accountId';
+  direction?: 'asc' | 'desc';
+  page?: number;
+  size?: number;
+}

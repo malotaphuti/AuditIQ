@@ -1,0 +1,193 @@
+<header class="page-header">
+  <div>
+    <h1>Data Pipeline</h1>
+    <p class="subtitle">Ingest → validate → standardise → load, with a data-quality report for every run.</p>
+  </div>
+</header>
+
+<div class="layout">
+  @if (canRun) {
+    <section class="panel run-panel" aria-labelledby="run-title">
+      <h2 id="run-title">Start a run</h2>
+      <mat-button-toggle-group [(ngModel)]="source" aria-label="Data source" class="source-toggle">
+        <mat-button-toggle value="GENERATED">Synthetic generator</mat-button-toggle>
+        <mat-button-toggle value="CSV">CSV folder</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (source === 'GENERATED') {
+        <p class="muted small">
+          Generates a fresh synthetic feed (with realistic data-quality defects) and ingests it as raw CSV.
+        </p>
+        <mat-form-field>
+          <mat-label>Transactions to generate</mat-label>
+          <input matInput type="number" min="1000" max="500000" step="1000" [(ngModel)]="transactionCount" />
+          <mat-hint>1,000 – 500,000</mat-hint>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Seed (optional)</mat-label>
+          <input matInput type="number" min="0" [(ngModel)]="seed" />
+          <mat-hint>Reuse a seed to reproduce a dataset</mat-hint>
+        </mat-form-field>
+      } @else {
+        <p class="muted small">Ingests <code>transactions.csv</code> from a folder under <code>data/incoming</code>.</p>
+        @if (folders().length === 0) {
+          <app-empty-state icon="folder_off" title="No CSV folders found"
+            message="Place a folder containing transactions.csv under data/incoming to ingest it." />
+        } @else {
+          <mat-form-field>
+            <mat-label>Folder</mat-label>
+            <mat-select [(ngModel)]="folder">
+              @for (f of folders(); track f) {
+                <mat-option [value]="f">{{ f }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      }
+
+      <button
+        mat-flat-button
+        (click)="run()"
+        [disabled]="submitting() || anyActive() || (source === 'CSV' && !folder)"
+      >
+        @if (submitting()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <ng-container><mat-icon>play_arrow</mat-icon> Run pipeline</ng-container>
+        }
+      </button>
+      @if (anyActive()) {
+        <p class="muted small">A run is in progress. Only one run can execute at a time.</p>
+      }
+    </section>
+  }
+
+  <section class="panel history" [class.wide]="!canRun" aria-labelledby="history-title">
+    <h2 id="history-title">Run history</h2>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    } @else if (error()) {
+      <app-empty-state icon="cloud_off" title="Run history unavailable" [message]="error()!">
+        <button mat-stroked-button (click)="loadRuns()">Retry</button>
+      </app-empty-state>
+    } @else if (runs().length === 0) {
+      <app-empty-state icon="account_tree" title="No pipeline runs yet"
+        message="Start a run to ingest the synthetic transaction dataset." />
+    } @else {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="runs()" class="dense">
+          <ng-container matColumnDef="runRef">
+            <th mat-header-cell *matHeaderCellDef>Run</th>
+            <td mat-cell *matCellDef="let r">{{ r.runRef }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let r"><span class="chip" [class]="'st-' + r.status">{{ r.status | humanize }}</span></td>
+          </ng-container>
+          <ng-container matColumnDef="trigger">
+            <th mat-header-cell *matHeaderCellDef>Triggered by</th>
+            <td mat-cell *matCellDef="let r">{{ r.triggeredBy }} <span class="muted small">({{ r.triggerType | humanize }})</span></td>
+          </ng-container>
+          <ng-container matColumnDef="startedAt">
+            <th mat-header-cell *matHeaderCellDef>Started</th>
+            <td mat-cell *matCellDef="let r">{{ r.startedAt | date: 'short' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="duration">
+            <th mat-header-cell *matHeaderCellDef>Duration</th>
+            <td mat-cell *matCellDef="let r">{{ r.durationMs | duration }}</td>
+          </ng-container>
+          <ng-container matColumnDef="records">
+            <th mat-header-cell *matHeaderCellDef class="num">Valid / total</th>
+            <td mat-cell *matCellDef="let r" class="num">
+              @if (r.totalRecords !== null && r.totalRecords !== undefined) {
+                {{ r.validRecords | number }} / {{ r.totalRecords | number }}
+              } @else { — }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: columns"
+            class="clickable"
+            [class.selected]="selected()?.run?.id === row.id"
+            (click)="select(row)"
+            (keydown.enter)="select(row)"
+            tabindex="0"
+          ></tr>
+        </table>
+      </div>
+      <mat-paginator [length]="total()" [pageIndex]="page" [pageSize]="size" [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)" aria-label="Pipeline run pages" />
+    }
+  </section>
+</div>
+
+@if (selected(); as d) {
+  <section class="panel detail" aria-labelledby="detail-title">
+    <div class="detail-head">
+      <h2 id="detail-title">{{ d.run.runRef }}</h2>
+      <span class="chip" [class]="'st-' + d.run.status">{{ d.run.status | humanize }}</span>
+      <span class="muted small">{{ d.run.source }}</span>
+    </div>
+
+    @if (d.errorMessage) {
+      <div class="notice error" role="alert"><mat-icon>error_outline</mat-icon> {{ d.errorMessage }}</div>
+    }
+
+    <h3>Execution steps</h3>
+    <ol class="steps">
+      @for (s of d.steps; track s.name) {
+        <li [class]="'step-' + s.status">
+          <mat-icon aria-hidden="true">{{ s.status === 'SUCCESS' ? 'check_circle' : s.status === 'FAILED' ? 'cancel' : 'pending' }}</mat-icon>
+          <span class="step-name">{{ s.name | humanize }}</span>
+          <span class="muted small">
+            @if (s.rows !== undefined && s.rows !== null) { {{ s.rows | number }} rows · }
+            {{ s.status === 'RUNNING' ? 'running…' : (s.durationMs | duration) }}
+          </span>
+          @if (s.message) { <span class="step-msg">{{ s.message }}</span> }
+        </li>
+      }
+    </ol>
+
+    @if (d.qualityReport; as q) {
+      <h3>Data quality report</h3>
+      <div class="kpis">
+        <div class="kpi"><span class="kpi-label">Records received</span><span class="kpi-value">{{ q.totalRecords | number }}</span></div>
+        <div class="kpi good"><span class="kpi-label">Valid</span><span class="kpi-value">{{ q.validRecords | number }}</span>
+          <span class="kpi-foot">{{ q.validRatePercent | number: '1.2-2' }}% of received</span></div>
+        <div class="kpi bad"><span class="kpi-label">Rejected</span><span class="kpi-value">{{ q.rejectedRecords | number }}</span></div>
+        <div class="kpi warn"><span class="kpi-label">Duplicates</span><span class="kpi-value">{{ q.duplicateRecords | number }}</span></div>
+        <div class="kpi"><span class="kpi-label">Missing values</span><span class="kpi-value">{{ q.missingValueTotal | number }}</span></div>
+        <div class="kpi"><span class="kpi-label">Processing time</span><span class="kpi-value">{{ q.processingDurationMs | duration }}</span>
+          <span class="kpi-foot">Status: {{ q.status | humanize }}</span></div>
+      </div>
+
+      <div class="breakdowns">
+        <div>
+          <h4>Rejection reasons</h4>
+          @if (reasons().length) {
+            <app-bar-list [items]="reasons()" label="Rejected records by reason" />
+          } @else { <p class="muted small">No records were rejected.</p> }
+        </div>
+        <div>
+          <h4>Missing values by field</h4>
+          @if (missing().length) {
+            <app-bar-list [items]="missing()" label="Missing values by field" />
+          } @else { <p class="muted small">No missing values.</p> }
+        </div>
+        <div>
+          <h4>Standardisations applied</h4>
+          @if (standardisations().length) {
+            <app-bar-list [items]="standardisations()" label="Values standardised by type" />
+          } @else { <p class="muted small">No standardisation was needed.</p> }
+        </div>
+      </div>
+      <p class="muted small">
+        Rejected records stay in the staging layer with their reasons for follow-up; duplicates are records whose
+        transaction ID was repeated in the feed or already loaded.
+      </p>
+    } @else if (d.run.status === 'RUNNING') {
+      <mat-progress-bar mode="indeterminate" aria-label="Run in progress" />
+    }
+  </section>
+}

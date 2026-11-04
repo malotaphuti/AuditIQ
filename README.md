@@ -11,8 +11,8 @@ controlled investigation agent – with human review of every outcome.
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: schema, Docker, Spring Boot API, auth/RBAC, audit trail, Angular shell | ✅ Complete |
-| 2 | Synthetic data generator & ingestion pipeline | ⏳ Next |
-| 3 | SQL audit rules, exceptions, investigation management | — |
+| 2 | Synthetic data generator, ingestion pipeline, data quality, transactions | ✅ Complete |
+| 3 | SQL audit rules, exceptions, investigation management | ⏳ Next |
 | 4 | Isolation Forest model & evaluation | — |
 | 5 | Angular analytics + Power BI | — |
 | 6 | RAG assistant | — |
@@ -30,6 +30,7 @@ Angular SPA ──► nginx ──► Spring Boot API (JWT, RBAC, audit log) ─
 * [System architecture](docs/architecture.md)
 * [Database ERD](docs/erd.md)
 * [Phase 1 plan & decisions](docs/phase-1-plan.md)
+* [Phase 2 data engineering](docs/phase-2-data-engineering.md)
 * API documentation: Swagger UI at `http://localhost:4200/swagger-ui.html` once running
 
 ## Repository layout
@@ -63,6 +64,12 @@ docker compose up -d --build
 
 Demo users (created on an empty database when their password is set): `admin`, `auditor`, `manager`.
 
+### Load the synthetic dataset
+
+Sign in as `auditor` (or `admin`) → **Data Pipeline** → *Synthetic generator* → **Run pipeline**. A 110,000-row run
+takes about a minute; the step log and data-quality report update live. Then explore **Transactions** and the
+**Overview** trend. To ingest a CSV instead, see [data/README.md](data/README.md).
+
 If a port is already in use on your machine (e.g. an Oracle listener on 8080 or a local PostgreSQL on 5432),
 change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 
@@ -75,11 +82,13 @@ change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 | Analytics service | `cd analytics-service && pip install -r requirements-dev.txt && ruff check . && pytest` |
 | Frontend | `cd frontend && npm ci && npm run test:ci` |
 
-Phase 1 results: backend **39/39**, frontend **29/29**, analytics service **5/5**, ruff clean, production build OK,
-full stack healthy under Docker Compose and smoke-tested (login per role, RBAC 401/403, audit trail, overview,
-service-to-service status).
+Set `TEST_DATABASE_ADMIN_URL=postgresql://user:pw@localhost:5432/postgres` to include the Python pipeline
+integration tests (they create and drop a throw-away database). CI does this automatically.
 
-## Security & governance (Phase 1)
+Latest results (Phase 2): backend **54/54**, frontend **46/46**, analytics service **54/54** (incl. 7 database
+integration tests), ruff clean, production build clean.
+
+## Security & governance
 
 * JWT access tokens (15 min) + rotating, hashed refresh tokens with reuse detection
 * BCrypt(12) passwords, strong password policy, lockout after 5 failed attempts
@@ -87,6 +96,9 @@ service-to-service status).
 * Every login, logout, refresh and user change written to `audit_logs` (including failures)
 * Self-registration disabled by default; no secrets in source (`.env` is git-ignored)
 * Python service is internal-only and requires a shared service key
+* Pipeline triggers (including refused ones) and transaction-detail views are audited
+* Transaction-level data is limited to Auditors and Audit Managers; Administrators manage the platform, not the data
+* Ground-truth anomaly labels are isolated in the `raw` schema and never shown in the application
 
 ## Branching
 

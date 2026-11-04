@@ -3,6 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AuditLogEntry,
+  PipelineRunDetail,
+  PipelineRunSummary,
+  QualityReport,
+  RunPipelineRequest,
+  TransactionAnalytics,
+  TransactionDetail,
+  TransactionQuery,
+  TransactionRow,
   CreateUserRequest,
   Overview,
   PageResponse,
@@ -68,5 +76,37 @@ export class ApiService {
     return this.http.get<PageResponse<AuditLogEntry>>('/api/admin/audit-logs', {
       params: params(filter),
     });
+  }
+
+  runPipeline(request: RunPipelineRequest): Observable<{ runId: number; runRef: string; status: string }> {
+    return this.http.post<{ runId: number; runRef: string; status: string }>('/api/pipeline/run', request);
+  }
+
+  pipelineRuns(page = 0, size = 20): Observable<PageResponse<PipelineRunSummary>> {
+    return this.http.get<PageResponse<PipelineRunSummary>>('/api/pipeline/runs', { params: params({ page, size }) });
+  }
+
+  pipelineRun(id: number): Observable<PipelineRunDetail> {
+    return this.http.get<PipelineRunDetail>(`/api/pipeline/runs/${id}`);
+  }
+
+  qualityReport(runId?: number): Observable<QualityReport> {
+    return this.http.get<QualityReport>('/api/pipeline/quality-report', { params: params({ runId }) });
+  }
+
+  pipelineSources(): Observable<{ folders: string[] }> {
+    return this.http.get<{ folders: string[] }>('/api/pipeline/sources');
+  }
+
+  transactions(query: TransactionQuery): Observable<PageResponse<TransactionRow>> {
+    return this.http.get<PageResponse<TransactionRow>>('/api/transactions', { params: params(query) });
+  }
+
+  transaction(id: string): Observable<TransactionDetail> {
+    return this.http.get<TransactionDetail>(`/api/transactions/${encodeURIComponent(id)}`);
+  }
+
+  transactionAnalytics(from?: string, to?: string): Observable<TransactionAnalytics> {
+    return this.http.get<TransactionAnalytics>('/api/transactions/analytics', { params: params({ from, to }) });
   }
 }

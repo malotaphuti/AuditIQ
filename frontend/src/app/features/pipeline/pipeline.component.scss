@@ -1,0 +1,129 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.history.wide {
+  grid-column: 1 / -1;
+}
+
+.run-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: start;
+}
+
+.source-toggle {
+  margin-bottom: 4px;
+}
+
+.clickable {
+  cursor: pointer;
+
+  &:hover,
+  &.selected {
+    background: var(--aiq-surface);
+  }
+}
+
+.num {
+  text-align: right;
+}
+
+.chip.st-SUCCESS { background: #dff4ea; color: #11603f; }
+.chip.st-PARTIAL { background: #fff1d0; color: #7a5300; }
+.chip.st-FAILED { background: #fde3df; color: #9b1c1c; }
+.chip.st-RUNNING, .chip.st-PENDING { background: #e8eef7; color: var(--aiq-navy); }
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  h2 { margin: 0; }
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 20px 0 10px;
+}
+
+h4 {
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+  color: var(--aiq-text-muted);
+  font-weight: 600;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  .step-SUCCESS mat-icon { color: var(--aiq-green); }
+  .step-FAILED mat-icon { color: var(--aiq-red); }
+  .step-RUNNING mat-icon { color: var(--aiq-amber); }
+  .step-name { font-weight: 500; min-width: 190px; }
+  .step-msg { color: var(--aiq-red); font-size: 0.8rem; }
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.kpi {
+  border: 1px solid var(--aiq-border);
+  border-left: 3px solid var(--aiq-navy);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &.good { border-left-color: var(--aiq-green); }
+  &.bad { border-left-color: var(--aiq-red); }
+  &.warn { border-left-color: var(--aiq-amber); }
+}
+
+.kpi-label { font-size: 0.75rem; color: var(--aiq-text-muted); }
+.kpi-value { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-foot { font-size: 0.75rem; color: var(--aiq-text-muted); }
+
+.breakdowns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.notice.error {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdecec;
+  color: #9b1c1c;
+  margin-top: 12px;
+}
+
+@media (max-width: 1099px) {
+  .layout, .breakdowns {
+    grid-template-columns: 1fr;
+  }
+}

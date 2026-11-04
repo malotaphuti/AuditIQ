@@ -48,6 +48,15 @@ public class AuditLogService {
                 entityId, Outcome.SUCCESS, details);
     }
 
+    /** Records an action by the current user with an explicit outcome (e.g. a rejected request). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void record(AuditAction action, String entityType, Object entityId, Outcome outcome,
+                       Map<String, Object> details) {
+        AuthenticatedUser user = CurrentUser.get().orElse(null);
+        write(user == null ? null : user.id(), user == null ? null : user.username(), action.name(), entityType,
+                entityId, outcome, details);
+    }
+
     /** Records an action for an explicitly identified actor (used before authentication completes). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordFor(Long userId, String username, AuditAction action, Outcome outcome,

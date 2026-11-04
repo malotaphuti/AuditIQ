@@ -9,6 +9,7 @@ import { errorMessage } from '../../core/error-message';
 import { Overview } from '../../core/models';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { HumanizePipe } from '../../shared/humanize.pipe';
+import { SeriesPoint, TimeSeriesChartComponent } from '../../shared/charts/time-series-chart.component';
 
 const STATUS_LABELS: Record<string, string> = {
   NEW: 'New',
@@ -22,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
   selector: 'app-overview',
   imports: [
     DecimalPipe, CurrencyPipe, DatePipe, MatIconModule, MatButtonModule, MatProgressBarModule,
-    MatTableModule, EmptyStateComponent, HumanizePipe,
+    MatTableModule, EmptyStateComponent, HumanizePipe, TimeSeriesChartComponent,
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
@@ -48,6 +49,10 @@ export class OverviewComponent implements OnInit {
   });
 
   readonly investigationTotal = computed(() => this.investigationRows().reduce((a, r) => a + r.count, 0));
+
+  readonly trend = computed<SeriesPoint[]>(() =>
+    (this.data()?.transactionTrend ?? []).map((p) => ({ key: p.date, value: p.count, secondary: p.value })),
+  );
 
   readonly pipelineHealth = computed(() => {
     const p = this.data()?.pipeline;

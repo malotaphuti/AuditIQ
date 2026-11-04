@@ -1,0 +1,170 @@
+<header class="page-header">
+  <div>
+    <h1>Transactions</h1>
+    <p class="subtitle">Curated synthetic transactions (amounts standardised to ZAR).</p>
+  </div>
+</header>
+
+@if (analytics(); as a) {
+  @if (a.totals.count > 0) {
+    <section class="analytics">
+      <article class="panel span-2">
+        <h2>Monthly transaction volume</h2>
+        <p class="muted small">
+          {{ a.totals.count | number }} transactions · {{ a.totals.value | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }}
+          · {{ a.totals.accounts | number }} accounts · average {{ a.totals.averageValue | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }}
+        </p>
+        <app-time-series-chart [data]="monthly()" kind="bar" label="Transactions per month"
+          valueLabel="Transactions" secondaryLabel="Value (ZAR)" />
+      </article>
+      <article class="panel">
+        <h2>By channel</h2>
+        <app-bar-list [items]="a.byChannel" label="Transactions by channel" />
+      </article>
+      <article class="panel span-2">
+        <div class="panel-head">
+          <h2>By merchant category</h2>
+          <mat-button-toggle-group [(ngModel)]="categoryMeasure" aria-label="Measure" hideSingleSelectionIndicator>
+            <mat-button-toggle value="value">Value</mat-button-toggle>
+            <mat-button-toggle value="count">Count</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        <app-bar-list [items]="a.byCategory" [measure]="categoryMeasure" [limit]="16" label="Transactions by category" />
+      </article>
+      <article class="panel">
+        <h2>By type</h2>
+        <app-bar-list [items]="a.byType" label="Transactions by type" />
+        <h2 class="mt">Top locations</h2>
+        <app-bar-list [items]="a.byLocation" [limit]="8" [humanizeKeys]="false" label="Transactions by location" />
+      </article>
+    </section>
+  }
+}
+
+<section class="panel">
+  <form class="filters" (ngSubmit)="apply()" aria-label="Transaction filters">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Transaction ID</mat-label>
+      <input matInput name="q" [(ngModel)]="filters.q" placeholder="Starts with…" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Account</mat-label>
+      <input matInput name="accountId" [(ngModel)]="filters.accountId" placeholder="ACC-000123" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Type</mat-label>
+      <mat-select name="type" [(ngModel)]="filters.type">
+        <mat-option value="">Any</mat-option>
+        @for (t of types; track t) { <mat-option [value]="t">{{ t | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Channel</mat-label>
+      <mat-select name="channel" [(ngModel)]="filters.channel">
+        <mat-option value="">Any</mat-option>
+        @for (c of channels; track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Category</mat-label>
+      <mat-select name="category" [(ngModel)]="filters.category">
+        <mat-option value="">Any</mat-option>
+        @for (c of categories; track c) { <mat-option [value]="c">{{ c | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select name="status" [(ngModel)]="filters.status">
+        <mat-option value="">Any</mat-option>
+        @for (s of statuses; track s) { <mat-option [value]="s">{{ s | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>From</mat-label>
+      <input matInput type="date" name="from" [(ngModel)]="filters.from" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>To</mat-label>
+      <input matInput type="date" name="to" [(ngModel)]="filters.to" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Min amount</mat-label>
+      <input matInput type="number" min="0" name="minAmount" [(ngModel)]="filters.minAmount" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Max amount</mat-label>
+      <input matInput type="number" min="0" name="maxAmount" [(ngModel)]="filters.maxAmount" />
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-flat-button type="submit"><mat-icon>filter_list</mat-icon> Apply</button>
+      @if (hasFilters()) {
+        <button mat-button type="button" (click)="clear()">Clear</button>
+      }
+    </div>
+  </form>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading transactions" />
+  }
+  @if (error()) {
+    <app-empty-state icon="error_outline" title="Could not load transactions" [message]="error()!">
+      <button mat-stroked-button (click)="search()">Retry</button>
+    </app-empty-state>
+  } @else if (!loading() && rows().length === 0) {
+    @if (hasFilters()) {
+      <app-empty-state icon="search_off" title="No transactions match" message="Adjust or clear the filters." />
+    } @else {
+      <app-empty-state icon="receipt_long" title="No transactions loaded"
+        message="Run the data pipeline to ingest the synthetic transaction dataset." />
+    }
+  } @else {
+    <p class="muted small result-count">{{ total() | number }} matching transactions</p>
+    <div class="table-wrap">
+      <table mat-table [dataSource]="rows()" matSort [matSortActive]="sort.active" [matSortDirection]="sort.direction"
+        (matSortChange)="onSort($event)" class="dense">
+        <ng-container matColumnDef="transactionDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+          <td mat-cell *matCellDef="let t">{{ t.transactionDate | date: 'dd MMM yyyy, HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="transactionId">
+          <th mat-header-cell *matHeaderCellDef>Transaction</th>
+          <td mat-cell *matCellDef="let t"><code>{{ t.transactionId }}</code></td>
+        </ng-container>
+        <ng-container matColumnDef="accountId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Account</th>
+          <td mat-cell *matCellDef="let t">{{ t.accountId }} <span class="muted small">{{ t.accountType | humanize }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type / channel</th>
+          <td mat-cell *matCellDef="let t">{{ t.transactionType | humanize }} <span class="muted small">{{ t.channel }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="merchant">
+          <th mat-header-cell *matHeaderCellDef>Merchant</th>
+          <td mat-cell *matCellDef="let t">
+            @if (t.merchantName) {
+              {{ t.merchantName }} <span class="muted small">{{ t.merchantCategory | humanize }}</span>
+            } @else { <span class="muted">—</span> }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="num">Amount</th>
+          <td mat-cell *matCellDef="let t" class="num">{{ t.amount | currency: 'ZAR' : 'symbol-narrow' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let t">
+            <span class="chip">{{ t.status | humanize }}</span>
+            @if (t.approvalStatus !== 'NOT_REQUIRED') {
+              <span class="chip approval">{{ t.approvalStatus | humanize }}</span>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns" class="clickable" tabindex="0" (click)="open(row)"
+          (keydown.enter)="open(row)" [attr.aria-label]="'Open transaction ' + row.transactionId"></tr>
+      </table>
+    </div>
+  }
+  <mat-paginator [length]="total()" [pageIndex]="page" [pageSize]="size" [pageSizeOptions]="[25, 50, 100]"
+    (page)="onPage($event)" aria-label="Transaction pages" />
+</section>

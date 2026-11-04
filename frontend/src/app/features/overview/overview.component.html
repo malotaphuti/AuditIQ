@@ -75,7 +75,9 @@
           message="The trend appears once the ingestion pipeline has loaded transactions."
         />
       } @else {
-        <p class="muted">{{ d.transactionTrend.length }} days of activity in the latest 90-day window.</p>
+        <p class="muted small">Daily transactions over the latest 90 days of loaded data.</p>
+        <app-time-series-chart [data]="trend()" kind="line" label="Daily transactions, latest 90 days"
+          valueLabel="Transactions" secondaryLabel="Value (ZAR)" />
       }
     </article>
 

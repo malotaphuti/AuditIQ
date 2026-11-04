@@ -39,6 +39,19 @@ jobs:
   analytics-service:
     name: Analytics service (Python 3.12)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # Enables the pipeline integration tests (they create and drop their own database).
+      TEST_DATABASE_ADMIN_URL: postgresql://ci:ci-password@localhost:5432/postgres
     defaults:
       run:
         working-directory: analytics-service

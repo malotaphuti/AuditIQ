@@ -91,14 +91,15 @@ public class OverviewService {
         return new PipelineHealth(total, ok, last.isEmpty() ? null : last.getFirst());
     }
 
-    /** Daily volume over the most recent 90 days of available data (anchored on the latest transaction). */
+    /** Daily volume over the latest 90 whole local (SAST) days of available data. */
     private List<TrendPoint> trend() {
         return jdbc.query("""
-                WITH bounds AS (SELECT max(transaction_date) AS max_d FROM transactions)
-                SELECT date_trunc('day', t.transaction_date)::date AS d, count(*) AS c,
+                WITH bounds AS (
+                    SELECT (max(transaction_date) AT TIME ZONE 'Africa/Johannesburg')::date AS max_d FROM transactions)
+                SELECT (t.transaction_date AT TIME ZONE 'Africa/Johannesburg')::date AS d, count(*) AS c,
                        sum(t.transaction_amount) AS v
                 FROM transactions t, bounds b
-                WHERE t.transaction_date > b.max_d - interval '90 days'
+                WHERE (t.transaction_date AT TIME ZONE 'Africa/Johannesburg')::date > b.max_d - 90
                 GROUP BY 1 ORDER BY 1
                 """, (rs, i) -> new TrendPoint(rs.getDate("d").toLocalDate(), rs.getLong("c"), rs.getBigDecimal("v")));
     }

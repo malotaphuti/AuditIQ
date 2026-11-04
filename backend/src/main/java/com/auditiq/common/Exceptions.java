@@ -27,6 +27,13 @@ public final class Exceptions {
         }
     }
 
+    /** 503 – a downstream dependency (e.g. the analytics service) is unavailable. */
+    public static class ServiceUnavailableException extends RuntimeException {
+        public ServiceUnavailableException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /** 403 – a feature is disabled by configuration. */
     public static class FeatureDisabledException extends RuntimeException {
         public FeatureDisabledException(String message) {

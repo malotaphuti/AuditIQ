@@ -8,6 +8,7 @@ import com.auditiq.common.Exceptions.BusinessRuleException;
 import com.auditiq.common.Exceptions.ConflictException;
 import com.auditiq.common.Exceptions.FeatureDisabledException;
 import com.auditiq.common.Exceptions.NotFoundException;
+import com.auditiq.common.Exceptions.ServiceUnavailableException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -87,6 +88,12 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> handleIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
         log.warn("Data integrity violation on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
         return build(HttpStatus.CONFLICT, "The request conflicts with existing data", req);
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    ResponseEntity<ApiError> handleUnavailable(ServiceUnavailableException ex, HttpServletRequest req) {
+        log.warn("Dependency unavailable on {}: {}", req.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), req);
     }
 
     @ExceptionHandler(BusinessRuleException.class)

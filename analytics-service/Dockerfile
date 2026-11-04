@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN useradd --create-home --uid 10001 appuser
+RUN useradd --create-home --uid 10001 appuser && mkdir -p /data && chown appuser /data
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt

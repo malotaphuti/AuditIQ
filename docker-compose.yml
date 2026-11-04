@@ -26,6 +26,12 @@ services:
       ANALYTICS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-auditiq}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auditiq}
       ANALYTICS_SERVICE_KEY: ${ANALYTICS_SERVICE_KEY:?Set ANALYTICS_SERVICE_KEY in .env}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PIPELINE_DATA_DIR: /data
+      PIPELINE_SCHEDULE_MINUTES: ${PIPELINE_SCHEDULE_MINUTES:-0}
+      PIPELINE_SCHEDULED_TRANSACTIONS: ${PIPELINE_SCHEDULED_TRANSACTIONS:-20000}
+    volumes:
+      # data/incoming: CSV folders to ingest; data/generated: feeds produced by the synthetic generator.
+      - ./data:/data
     depends_on:
       postgres:
         condition: service_healthy

@@ -4,6 +4,8 @@ import { NAV_ITEMS } from './core/navigation';
 
 const IMPLEMENTED: Record<string, Routes[number]['loadComponent']> = {
   overview: () => import('./features/overview/overview.component').then((m) => m.OverviewComponent),
+  pipeline: () => import('./features/pipeline/pipeline.component').then((m) => m.PipelineComponent),
+  transactions: () => import('./features/transactions/transactions.component').then((m) => m.TransactionsComponent),
   admin: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
 };
 
