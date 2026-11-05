@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panel {
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, minmax(150px, 1fr)) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.result-count {
+  margin: 8px 0;
+}
+
+.num {
+  text-align: right;
+}
+
+.title {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clickable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--aiq-surface);
+  }
+}
+
+code {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1199px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}

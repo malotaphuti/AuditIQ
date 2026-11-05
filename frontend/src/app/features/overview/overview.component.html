@@ -87,11 +87,8 @@
         <app-empty-state icon="donut_large" title="No exceptions yet"
           message="Run the audit rules or anomaly model to populate risk categories." />
       } @else {
-        <ul class="bars">
-          @for (r of d.riskDistribution; track r.category) {
-            <li><span>{{ r.category | humanize }}</span><strong>{{ r.count | number }}</strong></li>
-          }
-        </ul>
+        <p class="muted small">Potential exceptions by risk category.</p>
+        <app-bar-list [items]="riskBars()" label="Potential exceptions by risk category" />
       }
     </article>
 
@@ -140,7 +137,9 @@
             <td mat-cell *matCellDef="let e">{{ e.detectedAt | date: 'short' }}</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="exceptionColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: exceptionColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: exceptionColumns" [class.clickable]="canOpenExceptions"
+            [attr.tabindex]="canOpenExceptions ? 0 : null" (click)="openException(row)"
+            (keydown.enter)="openException(row)"></tr>
         </table>
       }
     </article>

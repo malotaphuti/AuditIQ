@@ -1,12 +1,7 @@
 """End-to-end pipeline tests against a real PostgreSQL + pgvector database.
 
-Set TEST_DATABASE_ADMIN_URL (e.g. postgresql://auditiq:pw@localhost:5432/postgres). Each test session creates a
-throw-away database, applies the backend's Flyway migration scripts, and drops it afterwards.
+Requires TEST_DATABASE_ADMIN_URL (see conftest.py).
 """
-
-import os
-import secrets
-from pathlib import Path
 
 import pandas as pd
 import psycopg
@@ -15,37 +10,12 @@ import pytest
 from app.pipeline import repository as repo
 from app.pipeline.generator import generate_dataset
 from app.pipeline.runner import PipelineRunner, RunRequest
-
-ADMIN_URL = os.getenv("TEST_DATABASE_ADMIN_URL")
-MIGRATIONS = Path(__file__).resolve().parents[3] / "backend" / "src" / "main" / "resources" / "db" / "migration"
-
-pytestmark = pytest.mark.skipif(not ADMIN_URL, reason="TEST_DATABASE_ADMIN_URL not set")
-
-
-@pytest.fixture(scope="module")
-def database_url():
-    name = f"auditiq_it_{secrets.token_hex(4)}"
-    with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
-        admin.execute(f'CREATE DATABASE "{name}"')
-    url = ADMIN_URL.rsplit("/", 1)[0] + f"/{name}"
-    try:
-        with psycopg.connect(url, autocommit=True) as conn:
-            for script in sorted(MIGRATIONS.glob("V*__*.sql"), key=lambda p: int(p.name[1:].split("__")[0])):
-                conn.execute(script.read_text(encoding="utf-8"))
-        yield url
-    finally:
-        with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
-            admin.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
+from tests.integration.helpers import fetch
 
 
 @pytest.fixture
 def runner(database_url, tmp_path):
     return PipelineRunner(lambda: psycopg.connect(database_url, autocommit=True), tmp_path)
-
-
-def fetch(url, query, *params):
-    with psycopg.connect(url) as conn:
-        return conn.execute(query, params).fetchall()
 
 
 def test_generated_run_loads_all_layers_and_reports_quality(runner, database_url):

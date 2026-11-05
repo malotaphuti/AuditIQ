@@ -1,0 +1,155 @@
+<a class="back" routerLink="/exceptions"><mat-icon aria-hidden="true">arrow_back</mat-icon> Audit Exceptions</a>
+
+@if (detail(); as d) {
+  <header class="page-header">
+    <div>
+      <h1>
+        {{ d.exception.exceptionRef }}
+        <span class="chip" [class]="'sev-' + d.exception.severity">{{ d.exception.severity | humanize }}</span>
+        <span class="chip" [class]="'st-' + d.exception.status">{{ d.exception.status | humanize }}</span>
+      </h1>
+      <p class="subtitle">
+        {{ d.exception.ruleName ?? 'Anomaly model finding' }} · {{ d.exception.riskCategory | humanize }} ·
+        detected {{ d.exception.detectedAt | date: 'medium' }}
+      </p>
+    </div>
+    @if (d.investigations.length > 0) {
+      <a mat-flat-button [routerLink]="['/investigations', d.investigations[0].id]">
+        <mat-icon>manage_search</mat-icon> View {{ d.investigations[0].investigationRef }}
+      </a>
+    } @else {
+      <button mat-flat-button (click)="openInvestigation()">
+        <mat-icon>add_task</mat-icon> Open investigation
+      </button>
+    }
+  </header>
+
+  <aside class="notice" role="note">
+    <mat-icon aria-hidden="true">info</mat-icon>
+    <p>
+      This is a <strong>potential exception</strong> identified by an automated rule. A rule match is not evidence of
+      wrongdoing by any customer, employee or vendor. An authorised auditor must review the evidence and record the
+      outcome.
+    </p>
+  </aside>
+
+  <section class="grid">
+    <article class="panel">
+      <span class="provenance analytical">Analytical finding</span>
+      <h2>Why it was flagged</h2>
+      <p class="reason">{{ d.exception.reason }}</p>
+      @if (facts().length) {
+        <dl class="facts">
+          @for (f of facts(); track f.label) { <dt>{{ f.label }}</dt><dd>{{ f.value }}</dd> }
+        </dl>
+      }
+
+      @if (d.rule; as rule) {
+        <h3>Rule {{ rule.ruleId }} · {{ rule.ruleName }}</h3>
+        <p class="small">{{ rule.description }}</p>
+        <p class="small muted">{{ rule.detectionLogic }}</p>
+        <h3>Thresholds applied
+          @if (ruleVersion(); as v) { <span class="muted">(rule version {{ v }}@if (v !== rule.currentVersion) {; current version {{ rule.currentVersion }}})</span> }
+        </h3>
+        <dl class="facts">
+          @for (t of thresholds(); track t.label) { <dt>{{ t.label }}</dt><dd>{{ t.value | humanize }}</dd> }
+        </dl>
+      }
+      @if (d.execution; as x) {
+        <p class="small muted">
+          Execution {{ x.batchRef ?? '#' + x.id }} started {{ x.startedAt | date: 'medium' }} by {{ x.executedBy }}.
+        </p>
+      }
+    </article>
+
+    <article class="panel">
+      <span class="provenance verified">Verified transaction data</span>
+      <h2>Flagged transaction</h2>
+      <dl class="facts">
+        <dt>Transaction</dt><dd><code>{{ d.transaction.transactionId }}</code></dd>
+        <dt>Date</dt><dd>{{ d.transaction.transactionDate | date: 'medium' }}</dd>
+        <dt>Amount</dt><dd class="strong">{{ d.transaction.amount | currency: 'ZAR' : 'symbol-narrow' }}</dd>
+        <dt>Type / channel</dt><dd>{{ d.transaction.transactionType | humanize }} · {{ d.transaction.channel }}</dd>
+        <dt>Account</dt><dd>{{ d.transaction.accountId }} · {{ d.transaction.accountType | humanize }}</dd>
+        <dt>Customer</dt><dd>{{ d.transaction.customerId }}</dd>
+        <dt>Merchant</dt>
+        <dd>
+          @if (d.transaction.merchantName) {
+            {{ d.transaction.merchantName }} ({{ d.transaction.merchantId }})
+          } @else { — }
+        </dd>
+        <dt>Location</dt><dd>{{ d.transaction.location ?? '—' }}</dd>
+        <dt>Status</dt><dd>{{ d.transaction.status | humanize }}</dd>
+        <dt>Approval</dt>
+        <dd>{{ d.transaction.approvalStatus | humanize }}
+          <span class="muted small">(threshold {{ d.transaction.approvalThreshold | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }})</span></dd>
+      </dl>
+
+      @if (d.otherFindings.length) {
+        <h3>Other findings on this transaction</h3>
+        <ul class="plain">
+          @for (o of d.otherFindings; track o.id) {
+            <li>
+              <a [routerLink]="['/exceptions', o.id]">{{ o.exceptionRef }}</a>
+              <span class="chip" [class]="'sev-' + o.severity">{{ o.severity | humanize }}</span>
+              {{ o.ruleName ?? 'Anomaly model' }}
+            </li>
+          }
+        </ul>
+      }
+    </article>
+  </section>
+
+  @if (d.linkedTransactions.length) {
+    <section class="panel">
+      <span class="provenance verified">Verified transaction data</span>
+      <h2>Transactions linked by the rule</h2>
+      <p class="muted small">The transactions the rule compared this one against.</p>
+      <ng-container *ngTemplateOutlet="txTable; context: { $implicit: d.linkedTransactions }" />
+    </section>
+  }
+
+  <section class="panel">
+    <span class="provenance verified">Verified transaction data</span>
+    <h2>Account activity within 7 days</h2>
+    @if (d.accountActivity.length) {
+      <p class="muted small">Other transactions on {{ d.exception.accountId }} around the flagged transaction (up to 50).</p>
+      <ng-container *ngTemplateOutlet="txTable; context: { $implicit: d.accountActivity }" />
+    } @else {
+      <p class="muted small">No other transactions on this account within 7 days.</p>
+    }
+  </section>
+
+  <ng-template #txTable let-rows>
+    <div class="table-wrap">
+      <table class="tx">
+        <thead>
+          <tr><th>Date</th><th>Transaction</th><th>Type</th><th>Merchant</th><th class="num">Amount</th><th>Status</th><th>Flags</th></tr>
+        </thead>
+        <tbody>
+          @for (r of rows; track r.transaction.transactionId) {
+            <tr>
+              <td>{{ r.transaction.transactionDate | date: 'dd MMM yyyy, HH:mm' }}</td>
+              <td><code>{{ r.transaction.transactionId }}</code></td>
+              <td>{{ r.transaction.transactionType | humanize }} <span class="muted small">{{ r.transaction.channel }}</span></td>
+              <td>{{ r.transaction.merchantName ?? '—' }}</td>
+              <td class="num">{{ r.transaction.amount | currency: 'ZAR' : 'symbol-narrow' }}</td>
+              <td>{{ r.transaction.status | humanize }}</td>
+              <td>
+                @for (ref of r.exceptionRefs; track ref) { <span class="chip">{{ ref }}</span> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </ng-template>
+} @else if (error()) {
+  <section class="panel">
+    <app-empty-state icon="error_outline" title="Exception unavailable" [message]="error()!">
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </app-empty-state>
+  </section>
+} @else {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading exception" />
+}

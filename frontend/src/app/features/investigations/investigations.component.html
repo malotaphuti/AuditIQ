@@ -1,0 +1,141 @@
+<header class="page-header">
+  <div>
+    <h1>Investigations</h1>
+    <p class="subtitle">Case management for potential exceptions. Outcomes are recorded only by an authorised reviewer.</p>
+  </div>
+</header>
+
+@if (summary(); as s) {
+  <section class="kpis" aria-label="Investigation workload">
+    <article class="kpi">
+      <span class="kpi-label">Open investigations</span>
+      <span class="kpi-value">{{ s.open | number }}</span>
+      <span class="kpi-foot">{{ totalInvestigations() | number }} in total</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Assigned to me</span>
+      <span class="kpi-value">{{ s.assignedToMe | number }}</span>
+      <span class="kpi-foot">{{ s.unassigned | number }} open and unassigned</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Average resolution</span>
+      <span class="kpi-value small">{{ formatHours(s.averageResolutionHours) }}</span>
+      <span class="kpi-foot">{{ s.byStatus.RESOLVED | number }} resolved with a recorded outcome</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Awaiting auditor review</span>
+      <span class="kpi-value">{{ s.exceptionsAwaitingReview | number }}</span>
+      <span class="kpi-foot"><a routerLink="/exceptions" [queryParams]="{ status: 'OPEN' }">Exceptions without a case</a></span>
+    </article>
+  </section>
+
+  @if (totalInvestigations() > 0) {
+    <section class="panel">
+      <h2>By status</h2>
+      <app-bar-list [items]="byStatus()" label="Investigations by status" />
+    </section>
+  }
+}
+
+<section class="panel">
+  <form class="filters" (ngSubmit)="apply()" aria-label="Investigation filters">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Reference, exception, transaction or account</mat-label>
+      <input matInput name="q" [(ngModel)]="filters.q" placeholder="INV-…, EXC-…, TXN…, ACC-…" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select name="status" [(ngModel)]="filters.status">
+        <mat-option value="">Any</mat-option>
+        <mat-option value="OPEN">Open (not resolved)</mat-option>
+        @for (s of statuses; track s) { <mat-option [value]="s">{{ s | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Priority</mat-label>
+      <mat-select name="priority" [(ngModel)]="filters.priority">
+        <mat-option value="">Any</mat-option>
+        @for (p of priorities; track p) { <mat-option [value]="p">{{ p | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Assignee</mat-label>
+      <mat-select name="assignee" [(ngModel)]="filters.assignee">
+        <mat-option value="">Anyone</mat-option>
+        <mat-option value="me">Assigned to me</mat-option>
+        <mat-option value="unassigned">Unassigned</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-flat-button type="submit"><mat-icon>filter_list</mat-icon> Apply</button>
+      @if (!isDefault()) {
+        <button mat-button type="button" (click)="reset()">Reset</button>
+      }
+    </div>
+  </form>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading investigations" />
+  }
+  @if (error()) {
+    <app-empty-state icon="error_outline" title="Could not load investigations" [message]="error()!">
+      <button mat-stroked-button (click)="search()">Retry</button>
+    </app-empty-state>
+  } @else if (!loading() && rows().length === 0) {
+    @if (totalInvestigations() === 0) {
+      <app-empty-state icon="manage_search" title="No investigations yet"
+        message="Open an investigation from a potential exception on the Audit Exceptions page.">
+        <a mat-stroked-button routerLink="/exceptions">Go to Audit Exceptions</a>
+      </app-empty-state>
+    } @else {
+      <app-empty-state icon="search_off" title="No investigations match" message="Adjust or reset the filters." />
+    }
+  } @else {
+    <p class="muted small result-count">{{ total() | number }} matching investigations</p>
+    <div class="table-wrap">
+      <table mat-table [dataSource]="rows()" matSort [matSortActive]="sort.active" [matSortDirection]="sort.direction"
+        (matSortChange)="onSort($event)" class="dense">
+        <ng-container matColumnDef="investigationRef">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="createdAt">Reference</th>
+          <td mat-cell *matCellDef="let i"><code>{{ i.investigationRef }}</code></td>
+        </ng-container>
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Title</th>
+          <td mat-cell *matCellDef="let i" class="title">{{ i.title }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let i">
+            <span class="chip" [class]="'st-' + i.status">{{ i.status | humanize }}</span>
+            @if (i.outcome) { <span class="muted small">{{ i.outcome | humanize }}</span> }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="priority">Priority</th>
+          <td mat-cell *matCellDef="let i"><span class="chip" [class]="'sev-' + i.priority">{{ i.priority | humanize }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="assignedTo">
+          <th mat-header-cell *matHeaderCellDef>Assignee</th>
+          <td mat-cell *matCellDef="let i">{{ i.assignedTo?.fullName ?? 'Unassigned' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="exceptionRef">
+          <th mat-header-cell *matHeaderCellDef>Exception</th>
+          <td mat-cell *matCellDef="let i">{{ i.exceptionRef }} <span class="muted small">{{ i.ruleId }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef class="num">Amount</th>
+          <td mat-cell *matCellDef="let i" class="num">{{ i.amount | currency: 'ZAR' : 'symbol-narrow' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt">Updated</th>
+          <td mat-cell *matCellDef="let i">{{ i.updatedAt | date: 'dd MMM yyyy, HH:mm' }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns" class="clickable" tabindex="0" (click)="open(row)"
+          (keydown.enter)="open(row)" [attr.aria-label]="'Open investigation ' + row.investigationRef"></tr>
+      </table>
+    </div>
+  }
+  <mat-paginator [length]="total()" [pageIndex]="page" [pageSize]="size" [pageSizeOptions]="[25, 50, 100]"
+    (page)="onPage($event)" aria-label="Investigation pages" />
+</section>

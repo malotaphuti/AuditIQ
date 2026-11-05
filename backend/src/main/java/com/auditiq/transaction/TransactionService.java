@@ -36,14 +36,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransactionService {
 
     /** Business dates are interpreted in the bank's local time zone. */
-    static final ZoneId BANK_ZONE = ZoneId.of("Africa/Johannesburg");
+    public static final ZoneId BANK_ZONE = ZoneId.of("Africa/Johannesburg");
 
     static final Map<String, String> SORTS = Map.of(
             "transactionDate", "t.transaction_date",
             "amount", "t.transaction_amount",
             "accountId", "t.account_id");
 
-    private static final String ROW_SELECT = """
+    public static final String ROW_SELECT = """
             SELECT t.transaction_id, t.account_id, t.customer_id, t.transaction_date, t.transaction_amount, t.currency,
                    t.transaction_type, t.transaction_channel, t.merchant_id, m.merchant_name, t.merchant_category,
                    t.transaction_location, t.account_type, t.transaction_status, t.approval_threshold,
@@ -204,7 +204,7 @@ public class TransactionService {
         return value == null || value.isBlank() ? null : value.trim().toUpperCase();
     }
 
-    private static final RowMapper<TransactionRow> ROW_MAPPER = (rs, i) -> new TransactionRow(
+    public static final RowMapper<TransactionRow> ROW_MAPPER = (rs, i) -> new TransactionRow(
             rs.getString("transaction_id"), rs.getString("account_id"), rs.getString("customer_id"),
             instant(rs, "transaction_date"), rs.getBigDecimal("transaction_amount"), rs.getString("currency"),
             rs.getString("transaction_type"), rs.getString("transaction_channel"), rs.getString("merchant_id"),

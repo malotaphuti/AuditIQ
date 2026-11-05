@@ -29,6 +29,7 @@ public class AnalyticsClient {
     static final String SERVICE_KEY_HEADER = "X-Service-Key";
 
     private final RestClient client;
+    private final RestClient longClient;
     private final RestClient healthClient;
     private final ObjectMapper mapper;
 
@@ -38,6 +39,12 @@ public class AnalyticsClient {
                 .baseUrl(props.baseUrl())
                 .defaultHeader(SERVICE_KEY_HEADER, props.serviceKey() == null ? "" : props.serviceKey())
                 .requestFactory(factory(Duration.ofSeconds(3), Duration.ofSeconds(30)))
+                .build();
+        // Rule execution is synchronous and scans the full curated layer.
+        this.longClient = RestClient.builder()
+                .baseUrl(props.baseUrl())
+                .defaultHeader(SERVICE_KEY_HEADER, props.serviceKey() == null ? "" : props.serviceKey())
+                .requestFactory(factory(Duration.ofSeconds(3), Duration.ofMinutes(10)))
                 .build();
         this.healthClient = RestClient.builder()
                 .baseUrl(props.baseUrl())
@@ -65,17 +72,40 @@ public class AnalyticsClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(command)
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    String detail = detail(res.getBody().readAllBytes());
-                    switch (res.getStatusCode().value()) {
-                        case 409 -> throw new ConflictException(detail);
-                        case 400, 422 -> throw new IllegalArgumentException(detail);
-                        default -> throw new ServiceUnavailableException(
-                                "The analytics service rejected the request (" + res.getStatusCode().value() + ")",
-                                null);
-                    }
-                })
+                .onStatus(HttpStatusCode::isError, this::translateError)
                 .body(StartRunResult.class));
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ExecuteRulesCommand(String executedBy, List<String> ruleIds) {
+    }
+
+    public record RuleResult(String ruleId, String ruleName, long executionId, String status, int matchesTotal,
+                             int exceptionsCreated, long durationMs, String error) {
+    }
+
+    public record ExecuteRulesResult(String batchRef, String executedBy, long durationMs, List<RuleResult> results) {
+    }
+
+    /** Runs audit rules synchronously; 409 when another execution is in progress. */
+    public ExecuteRulesResult executeRules(ExecuteRulesCommand command) {
+        return call(() -> longClient.post().uri("/internal/rules/execute")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(command)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::translateError)
+                .body(ExecuteRulesResult.class));
+    }
+
+    private void translateError(org.springframework.http.HttpRequest req,
+                                org.springframework.http.client.ClientHttpResponse res) throws java.io.IOException {
+        String detail = detail(res.getBody().readAllBytes());
+        switch (res.getStatusCode().value()) {
+            case 409 -> throw new ConflictException(detail);
+            case 400, 422 -> throw new IllegalArgumentException(detail);
+            default -> throw new ServiceUnavailableException(
+                    "The analytics service rejected the request (" + res.getStatusCode().value() + ")", null);
+        }
     }
 
     public List<String> pipelineSources() {
@@ -106,9 +136,9 @@ public class AnalyticsClient {
     private String detail(byte[] body) {
         try {
             JsonNode node = mapper.readTree(body).path("detail");
-            return node.isTextual() ? node.asText() : "Invalid pipeline parameters";
+            return node.isTextual() ? node.asText() : "Invalid request parameters";
         } catch (java.io.IOException ex) {
-            return "Invalid pipeline parameters";
+            return "Invalid request parameters";
         }
     }
 }

@@ -3,6 +3,21 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AuditLogEntry,
+  AuditRule,
+  CreateInvestigationRequest,
+  ExceptionDetail,
+  ExceptionQuery,
+  ExceptionRow,
+  ExceptionSummary,
+  ExecuteRulesResponse,
+  InvestigationDetail,
+  InvestigationQuery,
+  InvestigationRow,
+  InvestigationSummary,
+  RuleExecution,
+  StatusChangeRequest,
+  UpdateRuleRequest,
+  UserRef,
   PipelineRunDetail,
   PipelineRunSummary,
   QualityReport,
@@ -108,5 +123,70 @@ export class ApiService {
 
   transactionAnalytics(from?: string, to?: string): Observable<TransactionAnalytics> {
     return this.http.get<TransactionAnalytics>('/api/transactions/analytics', { params: params({ from, to }) });
+  }
+
+  // -- audit rules --------------------------------------------------------------------------------------------------
+  auditRules(): Observable<AuditRule[]> {
+    return this.http.get<AuditRule[]>('/api/audit-rules');
+  }
+
+  updateAuditRule(ruleId: string, request: UpdateRuleRequest): Observable<AuditRule> {
+    return this.http.put<AuditRule>(`/api/audit-rules/${encodeURIComponent(ruleId)}`, request);
+  }
+
+  executeAuditRules(ruleIds?: string[]): Observable<ExecuteRulesResponse> {
+    return this.http.post<ExecuteRulesResponse>('/api/audit-rules/execute', ruleIds ? { ruleIds } : {});
+  }
+
+  ruleExecutions(ruleId?: string, page = 0, size = 20): Observable<PageResponse<RuleExecution>> {
+    return this.http.get<PageResponse<RuleExecution>>('/api/audit-rules/executions', {
+      params: params({ ruleId, page, size }),
+    });
+  }
+
+  // -- exceptions ---------------------------------------------------------------------------------------------------
+  exceptions(query: ExceptionQuery): Observable<PageResponse<ExceptionRow>> {
+    return this.http.get<PageResponse<ExceptionRow>>('/api/exceptions', { params: params(query) });
+  }
+
+  exceptionSummary(): Observable<ExceptionSummary> {
+    return this.http.get<ExceptionSummary>('/api/exceptions/summary');
+  }
+
+  exception(id: number): Observable<ExceptionDetail> {
+    return this.http.get<ExceptionDetail>(`/api/exceptions/${id}`);
+  }
+
+  // -- investigations -----------------------------------------------------------------------------------------------
+  investigations(query: InvestigationQuery): Observable<PageResponse<InvestigationRow>> {
+    return this.http.get<PageResponse<InvestigationRow>>('/api/investigations', { params: params(query) });
+  }
+
+  investigationSummary(): Observable<InvestigationSummary> {
+    return this.http.get<InvestigationSummary>('/api/investigations/summary');
+  }
+
+  investigation(id: number): Observable<InvestigationDetail> {
+    return this.http.get<InvestigationDetail>(`/api/investigations/${id}`);
+  }
+
+  assignees(): Observable<UserRef[]> {
+    return this.http.get<UserRef[]>('/api/investigations/assignees');
+  }
+
+  createInvestigation(request: CreateInvestigationRequest): Observable<InvestigationDetail> {
+    return this.http.post<InvestigationDetail>('/api/investigations', request);
+  }
+
+  changeInvestigationStatus(id: number, request: StatusChangeRequest): Observable<InvestigationDetail> {
+    return this.http.put<InvestigationDetail>(`/api/investigations/${id}/status`, request);
+  }
+
+  assignInvestigation(id: number, assigneeId: number | null, version: number): Observable<InvestigationDetail> {
+    return this.http.put<InvestigationDetail>(`/api/investigations/${id}/assignment`, { assigneeId, version });
+  }
+
+  addInvestigationNote(id: number, note: string): Observable<InvestigationDetail> {
+    return this.http.post<InvestigationDetail>(`/api/investigations/${id}/notes`, { note });
   }
 }

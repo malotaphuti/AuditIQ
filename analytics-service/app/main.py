@@ -16,6 +16,7 @@ from app.config import get_settings
 from app.db import database_is_up
 from app.pipeline import repository
 from app.pipeline.runner import MAX_TRANSACTIONS, MIN_TRANSACTIONS, PipelineRunner, RunRequest
+from app.rules.engine import RuleEngine, RulesBusyError
 from app.scheduler import IntervalScheduler
 from app.security import require_service_key
 
@@ -24,6 +25,7 @@ logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s 
 log = logging.getLogger(__name__)
 
 runner = PipelineRunner(db.connect, settings.data_dir)
+rule_engine = RuleEngine(db.connect)
 
 
 @asynccontextmanager
@@ -86,6 +88,22 @@ def start_pipeline(body: PipelineRunBody) -> dict:
 def pipeline_sources() -> dict:
     """CSV folders available under <data>/incoming for ingestion."""
     return {"folders": runner.list_incoming()}
+
+
+class RuleExecutionBody(BaseModel):
+    executed_by: str = Field(alias="executedBy", min_length=1, max_length=50)
+    rule_ids: list[str] | None = Field(default=None, alias="ruleIds", max_length=50)
+
+
+@internal.post("/rules/execute")
+def execute_rules(body: RuleExecutionBody) -> dict:
+    """Runs the selected (or all enabled) audit rules synchronously and returns per-rule results."""
+    try:
+        return rule_engine.execute(body.executed_by, body.rule_ids)
+    except RulesBusyError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
 
 
 app.include_router(internal)

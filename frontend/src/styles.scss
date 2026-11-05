@@ -166,3 +166,112 @@ table.dense .mat-mdc-header-row {
   outline: 2px solid var(--aiq-green);
   outline-offset: 2px;
 }
+
+/* KPI tiles (overview, exceptions, investigations) */
+.kpi {
+  background: var(--aiq-card);
+  border: 1px solid var(--aiq-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 3px solid var(--aiq-navy);
+
+  &.accent-bad {
+    border-top-color: var(--aiq-red);
+  }
+
+  &.tone-good {
+    border-top-color: var(--aiq-green);
+  }
+
+  &.tone-bad {
+    border-top-color: var(--aiq-red);
+  }
+
+  &.tone-warn,
+  &.tone-neutral {
+    border-top-color: var(--aiq-amber);
+  }
+}
+
+.kpi-label {
+  font-size: 0.78rem;
+  color: var(--aiq-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--aiq-text);
+  font-variant-numeric: tabular-nums;
+
+  &.small {
+    font-size: 1.25rem;
+  }
+}
+
+.kpi-foot {
+  font-size: 0.78rem;
+  color: var(--aiq-text-muted);
+}
+
+/* Workflow status chips */
+.chip.st-OPEN,
+.chip.st-NEW {
+  background: #e8eef7;
+  color: var(--aiq-navy);
+}
+
+.chip.st-UNDER_REVIEW,
+.chip.st-UNDER_INVESTIGATION {
+  background: #e3effc;
+  color: #1d4f91;
+}
+
+.chip.st-AWAITING_EVIDENCE {
+  background: #fff1d0;
+  color: #7a5300;
+}
+
+.chip.st-ESCALATED {
+  background: #fde3df;
+  color: #9b1c1c;
+}
+
+.chip.st-RESOLVED,
+.chip.st-CLOSED {
+  background: #dff4ea;
+  color: #11603f;
+}
+
+/* Provenance labels: verified data vs analytical findings vs AI-generated content */
+.provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.provenance.verified {
+  background: #dff4ea;
+  color: #11603f;
+}
+
+.provenance.analytical {
+  background: #e3effc;
+  color: #1d4f91;
+}
+
+.provenance.human {
+  background: #ede7f6;
+  color: #4a2c82;
+}

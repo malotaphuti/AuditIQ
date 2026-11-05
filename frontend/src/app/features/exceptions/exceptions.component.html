@@ -1,0 +1,271 @@
+<header class="page-header">
+  <div>
+    <h1>Audit Exceptions</h1>
+    <p class="subtitle">
+      Potential exceptions raised by SQL audit rules. They are prompts for human review, not conclusions of wrongdoing.
+    </p>
+  </div>
+  @if (canExecute) {
+    <button mat-flat-button (click)="runRules()" [disabled]="executing()">
+      @if (executing()) {
+        <mat-spinner diameter="18" aria-label="Running audit rules" />
+      } @else {
+        <mat-icon>play_arrow</mat-icon>
+      }
+      {{ executing() ? 'Running audit rules…' : 'Run audit rules' }}
+    </button>
+  }
+</header>
+
+@if (lastRun(); as run) {
+  <section class="panel run-result" aria-live="polite">
+    <div class="panel-head">
+      <h2>Execution {{ run.batchRef }}</h2>
+      <span class="muted small">{{ run.durationMs | duration }} · {{ run.matchesTotal | number }} matches ·
+        <strong>{{ run.exceptionsCreated | number }}</strong> new exceptions</span>
+    </div>
+    <table class="dense outcome-table">
+      <thead>
+        <tr><th>Rule</th><th>Status</th><th class="num">Matches</th><th class="num">New exceptions</th><th class="num">Duration</th></tr>
+      </thead>
+      <tbody>
+        @for (r of run.results; track r.ruleId) {
+          <tr>
+            <td>{{ r.ruleId }} · {{ r.ruleName }}</td>
+            <td>
+              <span class="chip" [class.failed]="r.status !== 'SUCCESS'">{{ r.status | humanize }}</span>
+              @if (r.error) { <span class="error small">{{ r.error }}</span> }
+            </td>
+            <td class="num">{{ r.matchesTotal | number }}</td>
+            <td class="num">{{ r.exceptionsCreated | number }}</td>
+            <td class="num">{{ r.durationMs | duration }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p class="muted small">
+      Transactions already flagged by a rule are not flagged again, so re-running keeps existing exceptions and their
+      investigations intact.
+    </p>
+  </section>
+}
+
+@if (summary(); as s) {
+  <section class="kpis" aria-label="Exception totals">
+    <article class="kpi">
+      <span class="kpi-label">Potential exceptions</span>
+      <span class="kpi-value">{{ s.total | number }}</span>
+      <span class="kpi-foot">{{ s.bySource['RULE'] | number }} from audit rules</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Awaiting review</span>
+      <span class="kpi-value">{{ s.open | number }}</span>
+      <span class="kpi-foot">No investigation opened yet</span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Under investigation</span>
+      <span class="kpi-value">{{ s.underInvestigation | number }}</span>
+      <span class="kpi-foot"><a routerLink="/investigations">View investigations</a></span>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Closed</span>
+      <span class="kpi-value">{{ s.closed | number }}</span>
+      <span class="kpi-foot">Human-reviewed outcome recorded</span>
+    </article>
+  </section>
+
+  @if (s.total > 0) {
+    <section class="breakdown">
+      <article class="panel wide">
+        <h2>By rule</h2>
+        <app-bar-list [items]="byRule()" [humanizeKeys]="false" label="Exceptions by rule" />
+      </article>
+      <article class="panel">
+        <h2>By severity</h2>
+        <app-bar-list [items]="bySeverity()" label="Exceptions by severity" />
+      </article>
+      <article class="panel">
+        <h2>By risk category</h2>
+        <app-bar-list [items]="byCategory()" label="Exceptions by risk category" />
+      </article>
+    </section>
+  }
+}
+
+<section class="panel rules">
+  <div class="panel-head">
+    <h2>Audit rules</h2>
+    <span class="muted small">Thresholds are configured by administrators. Every execution is versioned and logged.</span>
+  </div>
+  @if (rulesError()) {
+    <p class="error small" role="alert">{{ rulesError() }}</p>
+  }
+  <mat-accordion multi>
+    @for (rule of rules(); track rule.ruleId) {
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <span class="rule-id">{{ rule.ruleId }}</span> {{ rule.ruleName }}
+            @if (!rule.enabled) { <span class="chip">Disabled</span> }
+          </mat-panel-title>
+          <mat-panel-description>
+            <span class="chip" [class]="'sev-' + rule.severity">{{ rule.severity | humanize }}</span>
+            <span class="hide-sm">{{ rule.riskCategory | humanize }} ·</span>
+            {{ rule.exceptionsTotal | number }} exceptions
+            @if (rule.lastExecution; as x) {
+              <span class="hide-sm">· last run {{ x.startedAt | date: 'd MMM, HH:mm' }}</span>
+            } @else {
+              <span class="hide-sm">· not run yet</span>
+            }
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="rule-body">
+          <div>
+            <h3>What it looks for</h3>
+            <p>{{ rule.description }}</p>
+            <h3>Detection logic</h3>
+            <p>{{ rule.detectionLogic }}</p>
+          </div>
+          <div>
+            <h3>Thresholds (version {{ rule.version }})</h3>
+            <dl>
+              @for (t of thresholdEntries(rule); track t.label) {
+                <dt>{{ t.label }}</dt><dd>{{ t.value | humanize }}</dd>
+              }
+            </dl>
+            @if (rule.lastExecution; as x) {
+              <h3>Last execution</h3>
+              <p class="small">
+                {{ x.status | humanize }} · {{ x.startedAt | date: 'medium' }} by {{ x.executedBy }} ·
+                {{ x.matchesTotal ?? 0 | number }} matches, {{ x.exceptionsCreated | number }} new
+                @if (x.durationMs !== null) { · {{ x.durationMs | duration }} }
+              </p>
+              @if (x.errorMessage) { <p class="error small">{{ x.errorMessage }}</p> }
+            }
+          </div>
+        </div>
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+</section>
+
+<section class="panel">
+  <form class="filters" (ngSubmit)="apply()" aria-label="Exception filters">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Exception or transaction</mat-label>
+      <input matInput name="q" [(ngModel)]="filters.q" placeholder="EXC-… or TXN…" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Severity</mat-label>
+      <mat-select name="severity" [(ngModel)]="filters.severity">
+        <mat-option value="">Any</mat-option>
+        @for (s of severities; track s) { <mat-option [value]="s">{{ s | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Risk category</mat-label>
+      <mat-select name="riskCategory" [(ngModel)]="filters.riskCategory">
+        <mat-option value="">Any</mat-option>
+        @for (c of categories; track c) { <mat-option [value]="c">{{ c | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Rule</mat-label>
+      <mat-select name="ruleId" [(ngModel)]="filters.ruleId">
+        <mat-option value="">Any</mat-option>
+        @for (r of rules(); track r.ruleId) { <mat-option [value]="r.ruleId">{{ r.ruleId }} · {{ r.ruleName }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select name="status" [(ngModel)]="filters.status">
+        <mat-option value="">Any</mat-option>
+        @for (s of statuses; track s) { <mat-option [value]="s">{{ s | humanize }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Account</mat-label>
+      <input matInput name="accountId" [(ngModel)]="filters.accountId" placeholder="ACC-000123" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Transaction from</mat-label>
+      <input matInput type="date" name="from" [(ngModel)]="filters.from" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Transaction to</mat-label>
+      <input matInput type="date" name="to" [(ngModel)]="filters.to" />
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-flat-button type="submit"><mat-icon>filter_list</mat-icon> Apply</button>
+      @if (hasFilters()) {
+        <button mat-button type="button" (click)="clear()">Clear</button>
+      }
+    </div>
+  </form>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading exceptions" />
+  }
+  @if (error()) {
+    <app-empty-state icon="error_outline" title="Could not load exceptions" [message]="error()!">
+      <button mat-stroked-button (click)="search()">Retry</button>
+    </app-empty-state>
+  } @else if (!loading() && rows().length === 0) {
+    @if (hasFilters()) {
+      <app-empty-state icon="search_off" title="No exceptions match" message="Adjust or clear the filters." />
+    } @else if (neverRun()) {
+      <app-empty-state icon="rule" title="Audit rules have not been run"
+        [message]="canExecute ? 'Load transactions through the data pipeline, then run the audit rules.' : 'An auditor or administrator can run the audit rules once transactions are loaded.'" />
+    } @else {
+      <app-empty-state icon="task_alt" title="No potential exceptions"
+        message="The last rule execution did not flag any transactions." />
+    }
+  } @else {
+    <p class="muted small result-count">{{ total() | number }} matching exceptions</p>
+    <div class="table-wrap">
+      <table mat-table [dataSource]="rows()" matSort [matSortActive]="sort.active" [matSortDirection]="sort.direction"
+        (matSortChange)="onSort($event)" class="dense">
+        <ng-container matColumnDef="exceptionRef">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="detectedAt">Reference</th>
+          <td mat-cell *matCellDef="let e"><code>{{ e.exceptionRef }}</code></td>
+        </ng-container>
+        <ng-container matColumnDef="severity">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="severity">Severity</th>
+          <td mat-cell *matCellDef="let e"><span class="chip" [class]="'sev-' + e.severity">{{ e.severity | humanize }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="rule">
+          <th mat-header-cell *matHeaderCellDef>Rule</th>
+          <td mat-cell *matCellDef="let e">{{ e.ruleId ?? 'Model' }} <span class="muted small">{{ e.ruleName }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="transactionDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="transactionDate">Transaction date</th>
+          <td mat-cell *matCellDef="let e">{{ e.transactionDate | date: 'dd MMM yyyy, HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="accountId">
+          <th mat-header-cell *matHeaderCellDef>Account</th>
+          <td mat-cell *matCellDef="let e">{{ e.accountId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="amount" arrowPosition="before" class="num">Amount</th>
+          <td mat-cell *matCellDef="let e" class="num">{{ e.amount | currency: 'ZAR' : 'symbol-narrow' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="reason">
+          <th mat-header-cell *matHeaderCellDef>Reason</th>
+          <td mat-cell *matCellDef="let e" class="reason" [title]="e.reason">{{ e.reason }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="chip" [class]="'st-' + e.status">{{ e.status | humanize }}</span>
+            @if (e.investigation; as inv) { <span class="muted small">{{ inv.investigationRef }}</span> }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns" class="clickable" tabindex="0" (click)="open(row)"
+          (keydown.enter)="open(row)" [attr.aria-label]="'Open exception ' + row.exceptionRef"></tr>
+      </table>
+    </div>
+  }
+  <mat-paginator [length]="total()" [pageIndex]="page" [pageSize]="size" [pageSizeOptions]="[25, 50, 100]"
+    (page)="onPage($event)" aria-label="Exception pages" />
+</section>

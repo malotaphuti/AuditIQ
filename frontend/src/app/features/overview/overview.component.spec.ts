@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { Overview } from '../../core/models';
 import { OverviewComponent } from './overview.component';
 
@@ -24,7 +26,11 @@ describe('OverviewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [OverviewComponent],
-      providers: [{ provide: ApiService, useValue: { overview: () => of(EMPTY) } }],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: { overview: () => of(EMPTY) } },
+        { provide: AuthService, useValue: { hasAnyRole: () => true } },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(OverviewComponent);
     fixture.detectChanges();

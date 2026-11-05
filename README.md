@@ -12,8 +12,8 @@ controlled investigation agent – with human review of every outcome.
 |---|---|---|
 | 1 | Foundation: schema, Docker, Spring Boot API, auth/RBAC, audit trail, Angular shell | ✅ Complete |
 | 2 | Synthetic data generator, ingestion pipeline, data quality, transactions | ✅ Complete |
-| 3 | SQL audit rules, exceptions, investigation management | ⏳ Next |
-| 4 | Isolation Forest model & evaluation | — |
+| 3 | SQL audit rules, exceptions, investigation management | ✅ Complete |
+| 4 | Isolation Forest model & evaluation | ⏳ Next |
 | 5 | Angular analytics + Power BI | — |
 | 6 | RAG assistant | — |
 | 7 | AI investigation agent | — |
@@ -31,6 +31,7 @@ Angular SPA ──► nginx ──► Spring Boot API (JWT, RBAC, audit log) ─
 * [Database ERD](docs/erd.md)
 * [Phase 1 plan & decisions](docs/phase-1-plan.md)
 * [Phase 2 data engineering](docs/phase-2-data-engineering.md)
+* [Phase 3 audit analytics & investigations](docs/phase-3-audit-analytics.md)
 * API documentation: Swagger UI at `http://localhost:4200/swagger-ui.html` once running
 
 ## Repository layout
@@ -70,6 +71,14 @@ Sign in as `auditor` (or `admin`) → **Data Pipeline** → *Synthetic generator
 takes about a minute; the step log and data-quality report update live. Then explore **Transactions** and the
 **Overview** trend. To ingest a CSV instead, see [data/README.md](data/README.md).
 
+### Run the audit rules and investigate
+
+As `auditor` → **Audit Exceptions** → **Run audit rules**. This takes about 5 seconds for 110k transactions and
+records about 2,100 potential exceptions. Open an exception to see why it was flagged, the thresholds applied and the
+related transactions. **Open investigation** starts a case; on **Investigations** you can assign it, add notes, move it
+through review and record the human-reviewed outcome. Administrators tune rule thresholds under
+**Administration → Audit rules**.
+
 If a port is already in use on your machine (e.g. an Oracle listener on 8080 or a local PostgreSQL on 5432),
 change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 
@@ -82,10 +91,10 @@ change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 | Analytics service | `cd analytics-service && pip install -r requirements-dev.txt && ruff check . && pytest` |
 | Frontend | `cd frontend && npm ci && npm run test:ci` |
 
-Set `TEST_DATABASE_ADMIN_URL=postgresql://user:pw@localhost:5432/postgres` to include the Python pipeline
-integration tests (they create and drop a throw-away database). CI does this automatically.
+Set `TEST_DATABASE_ADMIN_URL=postgresql://user:pw@localhost:5432/postgres` to include the Python pipeline and
+audit-rule integration tests (each test module creates and drops a throw-away database). CI does this automatically.
 
-Latest results (Phase 2): backend **54/54**, frontend **46/46**, analytics service **54/54** (incl. 7 database
+Latest results (Phase 3): backend **92/92**, frontend **69/69**, analytics service **88/88** (incl. 27 database
 integration tests), ruff clean, production build clean.
 
 ## Security & governance
@@ -99,8 +108,11 @@ integration tests), ruff clean, production build clean.
 * Pipeline triggers (including refused ones) and transaction-detail views are audited
 * Transaction-level data is limited to Auditors and Audit Managers; Administrators manage the platform, not the data
 * Ground-truth anomaly labels are isolated in the `raw` schema and never shown in the application
+* Audit findings are labelled as *potential* exceptions; only a person can record an investigation outcome, and every
+  rule run, threshold change, exception view and investigation action is audited
+* Rule thresholds are validated against a stored schema and bound as SQL parameters; sort keys are whitelisted
 
 ## Branching
 
 * `develop` – integration branch for ongoing work
-* `main` – tested, working functionality only (merged from `develop` at the end of each validated phase)
+* `main` – tested, working functionality only (merged from `develop` at deployment)

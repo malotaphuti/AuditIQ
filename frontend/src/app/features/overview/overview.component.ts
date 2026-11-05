@@ -4,9 +4,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { errorMessage } from '../../core/error-message';
-import { Overview } from '../../core/models';
+import { Overview, RecentException } from '../../core/models';
+import { BarItem, BarListComponent } from '../../shared/charts/bar-list.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { HumanizePipe } from '../../shared/humanize.pipe';
 import { SeriesPoint, TimeSeriesChartComponent } from '../../shared/charts/time-series-chart.component';
@@ -23,13 +26,17 @@ const STATUS_LABELS: Record<string, string> = {
   selector: 'app-overview',
   imports: [
     DecimalPipe, CurrencyPipe, DatePipe, MatIconModule, MatButtonModule, MatProgressBarModule,
-    MatTableModule, EmptyStateComponent, HumanizePipe, TimeSeriesChartComponent,
+    MatTableModule, EmptyStateComponent, HumanizePipe, TimeSeriesChartComponent, BarListComponent,
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })
 export class OverviewComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly router = inject(Router);
+
+  /** Exception detail pages are available to auditors and audit managers. */
+  readonly canOpenExceptions = inject(AuthService).hasAnyRole(['AUDITOR', 'AUDIT_MANAGER']);
 
   readonly data = signal<Overview | null>(null);
   readonly loading = signal(true);
@@ -48,6 +55,10 @@ export class OverviewComponent implements OnInit {
     }));
   });
 
+  readonly riskBars = computed<BarItem[]>(() =>
+    (this.data()?.riskDistribution ?? []).map((r) => ({ key: r.category, count: r.count, value: 0 })),
+  );
+
   readonly investigationTotal = computed(() => this.investigationRows().reduce((a, r) => a + r.count, 0));
 
   readonly trend = computed<SeriesPoint[]>(() =>
@@ -62,6 +73,12 @@ export class OverviewComponent implements OnInit {
     const tone = p.lastRun.status === 'SUCCESS' ? 'good' : p.lastRun.status === 'FAILED' ? 'bad' : 'warn';
     return { label: p.lastRun.status, tone };
   });
+
+  openException(e: RecentException): void {
+    if (this.canOpenExceptions) {
+      this.router.navigate(['/exceptions', e.id]);
+    }
+  }
 
   ngOnInit(): void {
     this.load();

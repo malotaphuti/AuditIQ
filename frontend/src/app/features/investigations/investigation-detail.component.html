@@ -1,0 +1,186 @@
+<a class="back" routerLink="/investigations"><mat-icon aria-hidden="true">arrow_back</mat-icon> Investigations</a>
+
+@if (detail(); as d) {
+  <header class="page-header">
+    <div>
+      <h1>
+        {{ d.investigation.investigationRef }}
+        <span class="chip" [class]="'st-' + d.investigation.status">{{ d.investigation.status | humanize }}</span>
+        <span class="chip" [class]="'sev-' + d.investigation.priority">{{ d.investigation.priority | humanize }}</span>
+      </h1>
+      <p class="subtitle">
+        {{ d.investigation.title }} · opened {{ d.investigation.createdAt | date: 'medium' }} by
+        {{ d.investigation.createdBy.fullName }} ·
+        {{ d.investigation.assignedTo ? 'assigned to ' + d.investigation.assignedTo.fullName : 'unassigned' }}
+      </p>
+    </div>
+  </header>
+
+  @if (resolved()) {
+    <section class="panel outcome">
+      <span class="provenance human">Human-reviewed outcome</span>
+      <h2>{{ d.investigation.outcome | humanize }}</h2>
+      <p>{{ d.outcomeSummary }}</p>
+      <p class="muted small">
+        Recorded by {{ d.reviewedBy?.fullName }} on {{ d.reviewedAt | date: 'medium' }}.
+      </p>
+    </section>
+  }
+
+  @if (actionError()) {
+    <p class="action-error" role="alert"><mat-icon aria-hidden="true">error_outline</mat-icon> {{ actionError() }}</p>
+  }
+
+  <section class="actions">
+    <article class="panel">
+      <h2>{{ resolved() ? 'Re-open investigation' : 'Update status' }}</h2>
+      <form (ngSubmit)="submitStatus()" aria-label="Change investigation status">
+        <mat-form-field class="full" subscriptSizing="dynamic">
+          <mat-label>{{ resolved() ? 'Re-open as' : 'Move to' }}</mat-label>
+          <mat-select name="nextStatus" [(ngModel)]="nextStatus">
+            @for (s of d.allowedTransitions; track s) {
+              <mat-option [value]="s">{{ s === 'RESOLVED' ? 'Resolved – record outcome' : (s | humanize) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (nextStatus === 'RESOLVED') {
+          @if (!d.investigation.assignedTo) {
+            <p class="hint warn">Assign the investigation before recording an outcome.</p>
+          }
+          <mat-form-field class="full" subscriptSizing="dynamic">
+            <mat-label>Outcome</mat-label>
+            <mat-select name="outcome" [(ngModel)]="outcome" required>
+              @for (o of d.outcomes; track o) { <mat-option [value]="o">{{ o | humanize }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field class="full" subscriptSizing="dynamic">
+            <mat-label>Outcome summary</mat-label>
+            <textarea matInput name="outcomeSummary" [(ngModel)]="outcomeSummary" rows="4" maxlength="4000"
+              required></textarea>
+            <mat-hint>What was reviewed and why this outcome (at least {{ minSummary }} characters).</mat-hint>
+          </mat-form-field>
+        }
+        @if (nextStatus) {
+          <mat-form-field class="full" subscriptSizing="dynamic">
+            <mat-label>Reason{{ needsReason() ? '' : ' (optional)' }}</mat-label>
+            <textarea matInput name="reason" [(ngModel)]="reason" rows="2" maxlength="1000"
+              [required]="needsReason()"></textarea>
+          </mat-form-field>
+        }
+        <button mat-flat-button type="submit" [disabled]="!canSubmitStatus()">
+          {{ nextStatus === 'RESOLVED' ? 'Record outcome' : resolved() ? 'Re-open' : 'Update status' }}
+        </button>
+      </form>
+    </article>
+
+    @if (!resolved()) {
+      <article class="panel">
+        <h2>Assignment</h2>
+        <form (ngSubmit)="submitAssignment()" aria-label="Assign investigation">
+          <mat-form-field class="full" subscriptSizing="dynamic">
+            <mat-label>Assigned to</mat-label>
+            <mat-select name="assigneeId" [(ngModel)]="assigneeId">
+              <mat-option [value]="null">Unassigned</mat-option>
+              @for (u of assignees(); track u.id) { <mat-option [value]="u.id">{{ u.fullName }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <button mat-stroked-button type="submit" [disabled]="busy() || !assignmentChanged()">Save assignment</button>
+        </form>
+
+        <h2 class="mt">Add note</h2>
+        <form (ngSubmit)="submitNote()" aria-label="Add investigation note">
+          <mat-form-field class="full" subscriptSizing="dynamic">
+            <mat-label>Note</mat-label>
+            <textarea matInput name="note" [(ngModel)]="note" rows="3" maxlength="4000"></textarea>
+          </mat-form-field>
+          <button mat-stroked-button type="submit" [disabled]="busy() || !note.trim()">Add note</button>
+        </form>
+      </article>
+    }
+  </section>
+  @if (busy()) { <mat-progress-bar mode="indeterminate" aria-label="Saving" /> }
+
+  <section class="grid">
+    <div class="col">
+      <article class="panel">
+        <span class="provenance analytical">Analytical finding</span>
+        <h2>
+          <a [routerLink]="['/exceptions', d.exception.id]">{{ d.exception.exceptionRef }}</a>
+          <span class="chip" [class]="'sev-' + d.exception.severity">{{ d.exception.severity | humanize }}</span>
+        </h2>
+        <p class="small muted">{{ d.exception.ruleId }} · {{ d.exception.ruleName }} · {{ d.exception.riskCategory | humanize }}</p>
+        <p>{{ d.exception.reason }}</p>
+        <p class="small">
+          Transaction <code>{{ d.exception.transactionId }}</code> · {{ d.exception.accountId }} ·
+          {{ d.exception.amount | currency: 'ZAR' : 'symbol-narrow' }} · {{ d.exception.transactionDate | date: 'medium' }}
+        </p>
+      </article>
+
+      <article class="panel">
+        <h2>Evidence</h2>
+        @for (e of d.evidence; track e.id) {
+          <div class="evidence">
+            <span class="provenance" [class]="evidenceLabel(e).css">{{ evidenceLabel(e).text }}</span>
+            <h3>{{ e.evidenceType | humanize }} @if (e.referenceId) { · {{ e.referenceId }} }</h3>
+            <p class="small">{{ e.description }}</p>
+            <dl class="facts">
+              @for (f of evidenceFacts(e); track f.label) { <dt>{{ f.label }}</dt><dd>{{ f.value }}</dd> }
+            </dl>
+            <p class="muted small">Captured {{ e.createdAt | date: 'medium' }}@if (e.addedBy) { by {{ e.addedBy.fullName }} }</p>
+          </div>
+        } @empty {
+          <p class="muted small">No evidence recorded.</p>
+        }
+      </article>
+    </div>
+
+    <div class="col">
+      <article class="panel">
+        <h2>Notes</h2>
+        @for (n of d.notes; track n.id) {
+          <div class="note">
+            <div class="meta">{{ n.author.fullName }} · {{ n.createdAt | date: 'medium' }}</div>
+            <p>{{ n.note }}</p>
+          </div>
+        } @empty {
+          <p class="muted small">No notes yet.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <h2>Status history</h2>
+        <ol class="timeline">
+          @for (h of d.history; track h.id) {
+            <li>
+              <div class="title">
+                @if (h.fromStatus) { {{ h.fromStatus | humanize }} → } {{ h.toStatus | humanize }}
+              </div>
+              <div class="meta">{{ h.changedBy.fullName }} · {{ h.changedAt | date: 'medium' }}</div>
+              @if (h.reason) { <p class="small">{{ h.reason }}</p> }
+            </li>
+          }
+        </ol>
+      </article>
+
+      <article class="panel">
+        <h2>Audit trail</h2>
+        <ol class="timeline">
+          @for (a of d.activity; track a.id) {
+            <li>
+              <div class="title">{{ a.action | humanize }} <span class="muted small">{{ activityText(a.details) }}</span></div>
+              <div class="meta">{{ a.username ?? 'system' }} · {{ a.occurredAt | date: 'medium' }}</div>
+            </li>
+          }
+        </ol>
+      </article>
+    </div>
+  </section>
+} @else if (error()) {
+  <section class="panel">
+    <app-empty-state icon="error_outline" title="Investigation unavailable" [message]="error()!">
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </app-empty-state>
+  </section>
+} @else {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading investigation" />
+}
