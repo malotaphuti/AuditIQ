@@ -1,0 +1,39 @@
+relationship 5b39b14c-c194-54c7-a0bd-77834c991e4f
+	fromColumn: fact_transactions.date_key
+	toColumn: dim_date.date_key
+
+relationship fb88b40a-36e0-59b8-9b24-e8449762edcd
+	fromColumn: fact_transactions.account_id
+	toColumn: dim_account.account_id
+
+relationship e624f733-07d9-5029-a0a8-f8846c1ee82b
+	fromColumn: fact_transactions.merchant_id
+	toColumn: dim_merchant.merchant_id
+
+relationship 7bd97826-df42-5f62-b5f4-ddbb02af4982
+	fromColumn: fact_exceptions.transaction_date_key
+	toColumn: dim_date.date_key
+
+relationship dbf12aa5-2ebc-5138-8b00-b550bc5ee5e9
+	fromColumn: fact_exceptions.account_id
+	toColumn: dim_account.account_id
+
+relationship e7f27c8e-03f7-5ec0-9051-40c3a481eb29
+	fromColumn: fact_exceptions.detector_key
+	toColumn: dim_detector.detector_key
+
+relationship 19c5c985-5370-57e9-99a4-812e0524348f
+	fromColumn: fact_investigations.created_date_key
+	toColumn: dim_date.date_key
+
+relationship 11919523-e7ba-536b-9677-872d7d7182f6
+	fromColumn: fact_investigations.account_id
+	toColumn: dim_account.account_id
+
+relationship ccf29a16-32fe-5691-81b8-1ee6c8cb664b
+	fromColumn: fact_investigations.detector_key
+	toColumn: dim_detector.detector_key
+
+relationship 3fc4d40d-081f-5e91-bc7f-c89f2d137a3c
+	fromColumn: fact_pipeline_runs.start_date_key
+	toColumn: dim_date.date_key

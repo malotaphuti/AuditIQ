@@ -67,6 +67,11 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -q
+      - name: Power BI project matches its generator
+        working-directory: .
+        run: |
+          python powerbi/generate_pbip.py
+          git diff --exit-code -- powerbi
 
   frontend:
     name: Frontend (Angular)

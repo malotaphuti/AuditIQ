@@ -1,0 +1,114 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "3c9cbe5235f35976bc06",
+  "position": {
+    "x": 850,
+    "y": 205,
+    "z": 0,
+    "width": 410,
+    "height": 495
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "investigation_ref"
+                }
+              },
+              "queryRef": "fact_investigations.investigation_ref",
+              "nativeQueryRef": "investigation_ref"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "status"
+                }
+              },
+              "queryRef": "fact_investigations.status",
+              "nativeQueryRef": "status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "priority"
+                }
+              },
+              "queryRef": "fact_investigations.priority",
+              "nativeQueryRef": "priority"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "assigned_to"
+                }
+              },
+              "queryRef": "fact_investigations.assigned_to",
+              "nativeQueryRef": "assigned_to"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "age_hours"
+                }
+              },
+              "queryRef": "fact_investigations.age_hours",
+              "nativeQueryRef": "age_hours"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Investigations'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

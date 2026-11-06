@@ -84,9 +84,9 @@ export function compact(n: number): string {
         @if (hoverPoint(); as h) {
           <div class="tooltip" [style.left.px]="h.tipX" role="status">
             <div class="tip-key">{{ h.point.key }}</div>
-            <div class="tip-row"><span>{{ valueLabel() }}</span><strong>{{ h.point.value | number: '1.0-0' }}</strong></div>
+            <div class="tip-row"><span>{{ valueLabel() }}</span><strong>{{ h.point.value | number: valueDigits() }}{{ unitSuffix() }}</strong></div>
             @if (h.point.secondary !== undefined && secondaryLabel()) {
-              <div class="tip-row"><span>{{ secondaryLabel() }}</span><strong>{{ h.point.secondary | number: '1.0-0' }}</strong></div>
+              <div class="tip-row"><span>{{ secondaryLabel() }}</span><strong>{{ h.point.secondary | number: secondaryDigits() }}</strong></div>
             }
           </div>
         }
@@ -130,6 +130,11 @@ export class TimeSeriesChartComponent {
   readonly label = input('Time series');
   readonly valueLabel = input('Value');
   readonly secondaryLabel = input<string>();
+  /** DecimalPipe digits for the tooltip value, and decimals for axis ticks (0 = compact integers). */
+  readonly valueDigits = input('1.0-0');
+  readonly secondaryDigits = input('1.0-0');
+  readonly tickDecimals = input(0);
+  readonly unitSuffix = input('');
 
   readonly height = HEIGHT;
   readonly pad = PAD;
@@ -167,7 +172,8 @@ export class TimeSeriesChartComponent {
   }
 
   readonly ticks = computed(() =>
-    [0, 0.25, 0.5, 0.75, 1].map((f) => ({ value: f, y: this.y(f * this.yMax()), text: compact(f * this.yMax()) })),
+    [0, 0.25, 0.5, 0.75, 1].map((f) => ({ value: f, y: this.y(f * this.yMax()), text: this.tickDecimals() > 0 ? (f * this.yMax()).toFixed(this.tickDecimals()) + this.unitSuffix()
+      : compact(f * this.yMax()) })),
   );
 
   readonly xLabels = computed(() => {

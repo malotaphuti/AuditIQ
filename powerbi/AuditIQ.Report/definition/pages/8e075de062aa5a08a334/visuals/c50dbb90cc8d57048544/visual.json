@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "c50dbb90cc8d57048544",
+  "position": {
+    "x": 440,
+    "y": 205,
+    "z": 0,
+    "width": 400,
+    "height": 240
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "outcome"
+                }
+              },
+              "queryRef": "fact_investigations.outcome",
+              "nativeQueryRef": "outcome"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "Investigations"
+                }
+              },
+              "queryRef": "fact_investigations.Investigations",
+              "nativeQueryRef": "Investigations"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Recorded outcomes'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "3a944b1ed1585499818f",
+  "position": {
+    "x": 20,
+    "y": 390,
+    "z": 0,
+    "width": 410,
+    "height": 310
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_transactions"
+                    }
+                  },
+                  "Property": "merchant_category"
+                }
+              },
+              "queryRef": "fact_transactions.merchant_category",
+              "nativeQueryRef": "merchant_category"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_transactions"
+                    }
+                  },
+                  "Property": "Total Transaction Value"
+                }
+              },
+              "queryRef": "fact_transactions.Total Transaction Value",
+              "nativeQueryRef": "Total Transaction Value"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Transaction value by category'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

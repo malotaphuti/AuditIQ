@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AuditLogEntry,
+  RiskDashboard,
   DetectResult,
   MlSettings,
   ModelPerformance,
@@ -218,5 +219,18 @@ export class ApiService {
 
   updateMlSettings(settings: Omit<MlSettings, 'updatedBy' | 'updatedAt'>): Observable<MlSettings> {
     return this.http.put<MlSettings>('/api/ml/settings', settings);
+  }
+
+  // -- risk analytics -----------------------------------------------------------------------------------------------
+  riskDashboard(from?: string, to?: string): Observable<RiskDashboard> {
+    return this.http.get<RiskDashboard>('/api/analytics/dashboard', { params: params({ from, to }) });
+  }
+
+  analyticsDatasets(): Observable<string[]> {
+    return this.http.get<string[]>('/api/analytics/datasets');
+  }
+
+  exportDataset(dataset: string): Observable<Blob> {
+    return this.http.get(`/api/analytics/export/${encodeURIComponent(dataset)}`, { responseType: 'blob' });
   }
 }

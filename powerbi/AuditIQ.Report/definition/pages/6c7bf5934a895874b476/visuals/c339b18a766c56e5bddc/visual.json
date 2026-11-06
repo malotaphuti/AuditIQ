@@ -1,0 +1,188 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "c339b18a766c56e5bddc",
+  "position": {
+    "x": 20,
+    "y": 390,
+    "z": 0,
+    "width": 820,
+    "height": 310
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_account"
+                    }
+                  },
+                  "Property": "account_id"
+                }
+              },
+              "queryRef": "dim_account.account_id",
+              "nativeQueryRef": "account_id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_account"
+                    }
+                  },
+                  "Property": "account_type"
+                }
+              },
+              "queryRef": "dim_account.account_type",
+              "nativeQueryRef": "account_type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_account"
+                    }
+                  },
+                  "Property": "branch"
+                }
+              },
+              "queryRef": "dim_account.branch",
+              "nativeQueryRef": "branch"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Potential Exceptions"
+                }
+              },
+              "queryRef": "fact_exceptions.Potential Exceptions",
+              "nativeQueryRef": "Potential Exceptions"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "High Priority Findings"
+                }
+              },
+              "queryRef": "fact_exceptions.High Priority Findings",
+              "nativeQueryRef": "High Priority Findings"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Rule Findings"
+                }
+              },
+              "queryRef": "fact_exceptions.Rule Findings",
+              "nativeQueryRef": "Rule Findings"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Model Findings"
+                }
+              },
+              "queryRef": "fact_exceptions.Model Findings",
+              "nativeQueryRef": "Model Findings"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Flagged Value"
+                }
+              },
+              "queryRef": "fact_exceptions.Flagged Value",
+              "nativeQueryRef": "Flagged Value"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Max Anomaly Score"
+                }
+              },
+              "queryRef": "fact_exceptions.Max Anomaly Score",
+              "nativeQueryRef": "Max Anomaly Score"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "fact_exceptions"
+                  }
+                },
+                "Property": "High Priority Findings"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Top accounts requiring review'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

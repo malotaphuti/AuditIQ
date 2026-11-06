@@ -1,0 +1,100 @@
+table fact_model_versions
+	lineageTag: bf6e66cb-3b5f-59df-8af5-2845a6a3456a
+
+	column version
+		dataType: string
+		lineageTag: b262a5eb-92ad-51dc-ab85-7b76932a253e
+		summarizeBy: none
+		sourceColumn: version
+
+	column algorithm
+		dataType: string
+		lineageTag: b50d600c-d9a6-5097-8716-bd8368ccc740
+		summarizeBy: none
+		sourceColumn: algorithm
+
+	column trained_at
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 6634be01-b0f3-5d37-b4e9-4344c128f19a
+		summarizeBy: none
+		sourceColumn: trained_at
+
+	column trained_by
+		dataType: string
+		lineageTag: 8995bdb2-04bd-52dd-8c7d-78bfe547297d
+		summarizeBy: none
+		sourceColumn: trained_by
+
+	column training_rows
+		dataType: int64
+		formatString: 0
+		lineageTag: 099e2129-ef2d-596c-a66a-b8b89d3a264e
+		summarizeBy: none
+		sourceColumn: training_rows
+
+	column is_active
+		dataType: boolean
+		lineageTag: 6e29bbb7-1b7a-54a5-a769-9af2a6fc54a3
+		summarizeBy: none
+		sourceColumn: is_active
+
+	column n_estimators
+		dataType: int64
+		formatString: 0
+		lineageTag: a9ad445d-984c-5184-9518-146994d40877
+		summarizeBy: none
+		sourceColumn: n_estimators
+
+	column precision
+		dataType: double
+		formatString: 0.000
+		lineageTag: 3e93c267-8449-572c-8dbb-8417d4570d77
+		summarizeBy: none
+		sourceColumn: precision
+
+	column recall
+		dataType: double
+		formatString: 0.000
+		lineageTag: ff7c9d35-ae71-505c-b764-7e3f3a80162d
+		summarizeBy: none
+		sourceColumn: recall
+
+	column f1
+		dataType: double
+		formatString: 0.000
+		lineageTag: 115d4ffa-b0d6-5704-88dc-0b5e9c4bb2fe
+		summarizeBy: none
+		sourceColumn: f1
+
+	column roc_auc
+		dataType: double
+		formatString: 0.000
+		lineageTag: 109ee2db-6a51-5e3c-9eb8-3a5caab6adb9
+		summarizeBy: none
+		sourceColumn: roc_auc
+
+	column average_precision
+		dataType: double
+		formatString: 0.000
+		lineageTag: cfc17c76-0950-5047-abb1-bad7410b4d67
+		summarizeBy: none
+		sourceColumn: average_precision
+
+	column flagged
+		dataType: int64
+		formatString: 0
+		lineageTag: f8508a3f-c2eb-5488-ba70-1b6a569bc2bc
+		summarizeBy: none
+		sourceColumn: flagged
+
+	partition fact_model_versions = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "fact_model_versions"]}[Data],
+				    Selected = Table.SelectColumns(View, {"version", "algorithm", "trained_at", "trained_by", "training_rows", "is_active", "n_estimators", "precision", "recall", "f1", "roc_auc", "average_precision", "flagged"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"version", type text}, {"algorithm", type text}, {"trained_at", type datetime}, {"trained_by", type text}, {"training_rows", Int64.Type}, {"is_active", type logical}, {"n_estimators", Int64.Type}, {"precision", type number}, {"recall", type number}, {"f1", type number}, {"roc_auc", type number}, {"average_precision", type number}, {"flagged", Int64.Type}})
+				in
+				    Typed

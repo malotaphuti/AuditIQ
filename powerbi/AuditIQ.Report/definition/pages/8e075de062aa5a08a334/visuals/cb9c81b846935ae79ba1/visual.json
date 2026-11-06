@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "cb9c81b846935ae79ba1",
+  "position": {
+    "x": 20,
+    "y": 205,
+    "z": 0,
+    "width": 410,
+    "height": 495
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "status"
+                }
+              },
+              "queryRef": "fact_investigations.status",
+              "nativeQueryRef": "status"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "Investigations"
+                }
+              },
+              "queryRef": "fact_investigations.Investigations",
+              "nativeQueryRef": "Investigations"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Investigations by status'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

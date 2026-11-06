@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: 'exceptions', label: 'Audit Exceptions', icon: 'rule', roles: ['AUDITOR', 'AUDIT_MANAGER'],
     description: 'Potential exceptions raised by SQL audit rules and the anomaly model.' },
   { path: 'risk-analytics', label: 'Risk Analytics', icon: 'insights', roles: ALL,
-    plannedPhase: 5, description: 'Interactive risk dashboards built on the analytics layer.' },
+    description: 'Interactive risk dashboards built on the analytics layer.' },
   { path: 'investigations', label: 'Investigations', icon: 'manage_search', roles: ['AUDITOR', 'AUDIT_MANAGER'],
     description: 'Case management with notes, assignment and human-reviewed outcomes.' },
   { path: 'assistant', label: 'AI Audit Assistant', icon: 'forum', roles: ['AUDITOR', 'AUDIT_MANAGER'],

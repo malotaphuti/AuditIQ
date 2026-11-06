@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "9db06353f14d573e83bc",
+  "position": {
+    "x": 440,
+    "y": 455,
+    "z": 0,
+    "width": 400,
+    "height": 245
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "assigned_to"
+                }
+              },
+              "queryRef": "fact_investigations.assigned_to",
+              "nativeQueryRef": "assigned_to"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "Open Investigations"
+                }
+              },
+              "queryRef": "fact_investigations.Open Investigations",
+              "nativeQueryRef": "Open Investigations"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Open cases by assignee'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

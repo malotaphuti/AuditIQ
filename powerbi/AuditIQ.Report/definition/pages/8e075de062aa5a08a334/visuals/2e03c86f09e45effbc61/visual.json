@@ -1,0 +1,58 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "2e03c86f09e45effbc61",
+  "position": {
+    "x": 1020,
+    "y": 80,
+    "z": 0,
+    "width": 240,
+    "height": 110
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Findings Awaiting Review"
+                }
+              },
+              "queryRef": "fact_exceptions.Findings Awaiting Review",
+              "nativeQueryRef": "Findings Awaiting Review"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Findings awaiting review'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

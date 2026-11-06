@@ -1,0 +1,122 @@
+table fact_pipeline_runs
+	lineageTag: b0e62cb4-dafb-510a-97ec-9bb84562b13b
+
+	measure 'Pipeline Runs' = COUNTROWS(fact_pipeline_runs)
+		formatString: #,0
+		lineageTag: ff70dba9-28ba-55f1-a475-4839d410b270
+
+	measure 'Pipeline Success Rate %' = DIVIDE(CALCULATE(COUNTROWS(fact_pipeline_runs), fact_pipeline_runs[status] = "SUCCESS"), COUNTROWS(fact_pipeline_runs))
+		formatString: 0.0%
+		lineageTag: d5946f7e-e4f3-5b33-acc9-3611387043a0
+
+	measure 'Records Received' = SUM(fact_pipeline_runs[total_records])
+		formatString: #,0
+		lineageTag: f6ee153f-71e3-5830-bacf-a72b9153bd35
+
+	measure 'Valid Record Rate %' = DIVIDE(SUM(fact_pipeline_runs[valid_records]), SUM(fact_pipeline_runs[total_records]))
+		formatString: 0.00%
+		lineageTag: 05dbfb88-71de-5091-a0f2-97055f830489
+
+	column run_id
+		dataType: int64
+		lineageTag: 4ef0d432-7b20-5b6b-9ebc-6181b6ce924a
+		summarizeBy: none
+		sourceColumn: run_id
+
+	column run_ref
+		dataType: string
+		lineageTag: 43671bcb-2b63-5a2e-ab6d-aff252be8c14
+		summarizeBy: none
+		sourceColumn: run_ref
+
+	column status
+		dataType: string
+		lineageTag: d53ebfa7-9d19-5023-b3f5-9f215702c98d
+		summarizeBy: none
+		sourceColumn: status
+
+	column trigger_type
+		dataType: string
+		lineageTag: 1763b9a3-553a-5f46-aa74-93ddfb5a87df
+		summarizeBy: none
+		sourceColumn: trigger_type
+
+	column triggered_by
+		dataType: string
+		lineageTag: 22a8260f-21e9-5e73-a2d3-52fc51b8d4f3
+		summarizeBy: none
+		sourceColumn: triggered_by
+
+	column started_at
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 5211dff9-72d5-50b0-b0c9-08832b81f13c
+		summarizeBy: none
+		sourceColumn: started_at
+
+	column start_date_key
+		dataType: int64
+		isHidden
+		lineageTag: f4e2427b-9f92-594f-a249-60b39cb6fb21
+		summarizeBy: none
+		sourceColumn: start_date_key
+
+	column duration_seconds
+		dataType: double
+		formatString: 0.000
+		lineageTag: 474eea37-4437-51ce-b972-72062c92c99a
+		summarizeBy: none
+		sourceColumn: duration_seconds
+
+	column total_records
+		dataType: int64
+		formatString: 0
+		lineageTag: 2afe27d4-6976-5177-800f-c20d8e2d4434
+		summarizeBy: none
+		sourceColumn: total_records
+
+	column valid_records
+		dataType: int64
+		formatString: 0
+		lineageTag: d0c9367c-c566-5230-b317-fb4dadd5966f
+		summarizeBy: none
+		sourceColumn: valid_records
+
+	column rejected_records
+		dataType: int64
+		formatString: 0
+		lineageTag: cf40dbf0-0303-5dfb-b072-aa8e8bf87ca9
+		summarizeBy: none
+		sourceColumn: rejected_records
+
+	column duplicate_records
+		dataType: int64
+		formatString: 0
+		lineageTag: 4d6fa833-5a3f-5592-b6c9-1872aa42d7a0
+		summarizeBy: none
+		sourceColumn: duplicate_records
+
+	column missing_value_total
+		dataType: int64
+		formatString: 0
+		lineageTag: 3c2025be-8973-5154-9c11-6084268139e4
+		summarizeBy: none
+		sourceColumn: missing_value_total
+
+	column valid_rate_percent
+		dataType: double
+		formatString: 0.000
+		lineageTag: 8be7ec94-4f53-5001-bb7f-7d6587fcc3c1
+		summarizeBy: none
+		sourceColumn: valid_rate_percent
+
+	partition fact_pipeline_runs = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "fact_pipeline_runs"]}[Data],
+				    Selected = Table.SelectColumns(View, {"run_id", "run_ref", "status", "trigger_type", "triggered_by", "started_at", "start_date_key", "duration_seconds", "total_records", "valid_records", "rejected_records", "duplicate_records", "missing_value_total", "valid_rate_percent"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"run_id", Int64.Type}, {"run_ref", type text}, {"status", type text}, {"trigger_type", type text}, {"triggered_by", type text}, {"started_at", type datetime}, {"start_date_key", Int64.Type}, {"duration_seconds", type number}, {"total_records", Int64.Type}, {"valid_records", Int64.Type}, {"rejected_records", Int64.Type}, {"duplicate_records", Int64.Type}, {"missing_value_total", Int64.Type}, {"valid_rate_percent", type number}})
+				in
+				    Typed

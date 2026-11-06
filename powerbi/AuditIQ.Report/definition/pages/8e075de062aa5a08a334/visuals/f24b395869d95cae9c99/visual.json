@@ -1,0 +1,58 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "f24b395869d95cae9c99",
+  "position": {
+    "x": 270,
+    "y": 80,
+    "z": 0,
+    "width": 240,
+    "height": 110
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_investigations"
+                    }
+                  },
+                  "Property": "Investigations In Progress"
+                }
+              },
+              "queryRef": "fact_investigations.Investigations In Progress",
+              "nativeQueryRef": "Investigations In Progress"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'In progress'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

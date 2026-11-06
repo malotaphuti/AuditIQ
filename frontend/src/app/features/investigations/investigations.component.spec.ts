@@ -57,6 +57,7 @@ describe('InvestigationsComponent', () => {
   it('formats resolution time and opens a case', () => {
     const c = fixture.componentInstance;
     expect(c.formatHours(null)).toBe('—');
+    expect(c.formatHours(undefined as unknown as null)).toBe('—');
     expect(c.formatHours(5.25)).toBe('5.3 h');
     expect(c.formatHours(0.5)).toBe('30 min');
     expect(c.formatHours(0)).toBe('under 6 min');

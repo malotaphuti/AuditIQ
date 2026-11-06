@@ -673,3 +673,67 @@ export interface AnomalyFactor {
   deviation: number;
   combined?: boolean;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Phase 5 – risk analytics dashboard
+// ---------------------------------------------------------------------------------------------------------------------
+export interface DashBucket {
+  key: string;
+  count: number;
+  value: number | null;
+}
+
+export interface RiskDashboard {
+  generatedAt: string;
+  from: string;
+  to: string;
+  dataFrom: string | null;
+  dataTo: string | null;
+  executive: {
+    transactions: number;
+    totalValue: number;
+    potentialExceptions: number;
+    highPriority: number;
+    flaggedTransactions: number;
+    exceptionRatePercent: number;
+    awaitingReview: number;
+    openInvestigations: number;
+    pipeline: { runs: number; successfulRuns: number; lastStatus: string | null; lastRunAt: string | null;
+      lastValidRatePercent: number | null };
+  };
+  transactions: {
+    daily: { date: string; count: number; value: number; flagged: number }[];
+    monthly: DashBucket[];
+    byCategory: DashBucket[];
+    byChannel: DashBucket[];
+    byType: DashBucket[];
+    byLocation: DashBucket[];
+    byHour: DashBucket[];
+  };
+  risk: {
+    bySeverity: Record<string, number>;
+    byRiskCategory: DashBucket[];
+    byDetector: { key: string; name: string; type: string; exceptions: number; highPriority: number }[];
+    byStatus: Record<string, number>;
+    monthlyTrend: { month: string; transactions: number; flaggedTransactions: number; flaggedRatePercent: number;
+      ruleFindings: number; modelFindings: number }[];
+    ruleVsModel: { rulesOnly: number; modelOnly: number; both: number };
+    /** Present for auditors and audit managers only. */
+    topAccounts?: {
+      accountId: string; accountType: string; branch: string | null; exceptions: number; ruleFindings: number;
+      modelFindings: number; highPriority: number; detectors: number; flaggedAmount: number;
+      maxAnomalyScore: number | null; awaitingReview: number; openInvestigations: number;
+    }[];
+  };
+  investigations: {
+    byStatus: Record<string, number>;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    averageResolutionHours: number | null;
+    oldestOpenAgeHours: number | null;
+    awaitingReview: number;
+    byOutcome: DashBucket[];
+    openByAssignee: DashBucket[];
+  };
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "58ddc23e563b5da0aeee",
+  "position": {
+    "x": 850,
+    "y": 80,
+    "z": 0,
+    "width": 410,
+    "height": 300
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_detector"
+                    }
+                  },
+                  "Property": "detector_name"
+                }
+              },
+              "queryRef": "dim_detector.detector_name",
+              "nativeQueryRef": "detector_name"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Potential Exceptions"
+                }
+              },
+              "queryRef": "fact_exceptions.Potential Exceptions",
+              "nativeQueryRef": "Potential Exceptions"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Rule-based versus model findings'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

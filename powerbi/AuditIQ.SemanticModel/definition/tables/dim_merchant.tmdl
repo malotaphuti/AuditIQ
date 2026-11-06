@@ -1,0 +1,50 @@
+table dim_merchant
+	lineageTag: 5ebe649b-0c6f-5ea0-87aa-5c7cf2297197
+
+	column merchant_id
+		dataType: string
+		isKey
+		lineageTag: 6b5cd1b3-cfa4-5fe2-9de6-172d14a2dd60
+		summarizeBy: none
+		sourceColumn: merchant_id
+
+	column merchant_name
+		dataType: string
+		lineageTag: 2e46f967-af4a-5e8b-a304-1a25ecad25de
+		summarizeBy: none
+		sourceColumn: merchant_name
+
+	column merchant_category
+		dataType: string
+		lineageTag: 68544f89-22ee-54b1-8c11-50edd7eb99c7
+		summarizeBy: none
+		sourceColumn: merchant_category
+
+	column city
+		dataType: string
+		lineageTag: f324a588-5fe8-5be3-8275-f8fc440fe44d
+		summarizeBy: none
+		sourceColumn: city
+
+	column country
+		dataType: string
+		lineageTag: a7ecc24c-df24-5b69-992a-b5a1b70b9e9d
+		summarizeBy: none
+		sourceColumn: country
+
+	column is_vendor
+		dataType: boolean
+		lineageTag: 905609f7-c2c4-5db6-8142-0fde4b400b2a
+		summarizeBy: none
+		sourceColumn: is_vendor
+
+	partition dim_merchant = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "dim_merchant"]}[Data],
+				    Selected = Table.SelectColumns(View, {"merchant_id", "merchant_name", "merchant_category", "city", "country", "is_vendor"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"merchant_id", type text}, {"merchant_name", type text}, {"merchant_category", type text}, {"city", type text}, {"country", type text}, {"is_vendor", type logical}})
+				in
+				    Typed

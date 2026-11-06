@@ -32,3 +32,8 @@ data/models/*
 .DS_Store
 Thumbs.db
 *.log
+
+# Power BI project local state (never commit cached data or per-user settings)
+powerbi/**/.pbi/localSettings.json
+powerbi/**/.pbi/cache.abf
+powerbi/**/*.pbix

@@ -1,0 +1,273 @@
+<header class="page-header">
+  <div>
+    <h1>Risk Analytics</h1>
+    <p class="subtitle">
+      Built on the <code>analytics</code> views that the Power BI report also uses. Exceptions are potential findings
+      for review, not conclusions.
+    </p>
+  </div>
+</header>
+
+<section class="panel range" aria-label="Date range">
+  <form class="range-form" (ngSubmit)="load()">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Transactions from</mat-label>
+      <input matInput type="date" name="from" [(ngModel)]="from" />
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>to</mat-label>
+      <input matInput type="date" name="to" [(ngModel)]="to" />
+    </mat-form-field>
+    <button mat-flat-button type="submit" [disabled]="loading()">Apply</button>
+    <span class="presets">
+      <button mat-button type="button" (click)="preset(30)" [disabled]="!data()?.dataTo">Last 30 days</button>
+      <button mat-button type="button" (click)="preset(90)" [disabled]="!data()?.dataTo">Last 90 days</button>
+      <button mat-button type="button" (click)="preset('all')" [disabled]="!data()?.dataTo">All data</button>
+    </span>
+    @if (data(); as d) {
+      @if (d.dataFrom) {
+        <span class="muted small">Data available {{ d.dataFrom | date: 'd MMM yyyy' }} – {{ d.dataTo | date: 'd MMM yyyy' }}</span>
+      }
+    }
+  </form>
+</section>
+
+@if (loading()) { <mat-progress-bar mode="indeterminate" aria-label="Loading dashboard" /> }
+
+@if (error()) {
+  <section class="panel">
+    <app-empty-state icon="error_outline" title="Dashboard unavailable" [message]="error()!">
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </app-empty-state>
+  </section>
+} @else if (data(); as d) {
+  @if (d.executive.transactions === 0) {
+    <section class="panel">
+      <app-empty-state icon="insights" title="No transactions in this range"
+        message="Load data through the Data Pipeline, or widen the date range." />
+    </section>
+  } @else {
+    <mat-tab-group animationDuration="0ms" class="tabs">
+      <!-- ============================== Executive overview ============================== -->
+      <mat-tab label="Executive overview">
+        <section class="kpis" aria-label="Executive indicators">
+          <article class="kpi">
+            <span class="kpi-label">Transactions processed</span>
+            <span class="kpi-value">{{ d.executive.transactions | number }}</span>
+            <span class="kpi-foot">{{ d.from | date: 'd MMM yyyy' }} – {{ d.to | date: 'd MMM yyyy' }}</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Total transaction value</span>
+            <span class="kpi-value">{{ d.executive.totalValue | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }}</span>
+            <span class="kpi-foot">Synthetic ZAR</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Potential exceptions</span>
+            <span class="kpi-value">{{ d.executive.potentialExceptions | number }}</span>
+            <span class="kpi-foot">{{ d.executive.awaitingReview | number }} awaiting review</span>
+          </article>
+          <article class="kpi accent-bad">
+            <span class="kpi-label">High-priority findings</span>
+            <span class="kpi-value">{{ d.executive.highPriority | number }}</span>
+            <span class="kpi-foot">High + critical severity</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Exception rate</span>
+            <span class="kpi-value">{{ d.executive.exceptionRatePercent | number: '1.2-2' }}%</span>
+            <span class="kpi-foot">{{ d.executive.flaggedTransactions | number }} flagged transactions</span>
+          </article>
+          <article class="kpi" [class.tone-good]="d.executive.pipeline.lastStatus === 'SUCCESS'"
+            [class.tone-bad]="d.executive.pipeline.lastStatus === 'FAILED'">
+            <span class="kpi-label">Pipeline health</span>
+            <span class="kpi-value small">{{ (d.executive.pipeline.lastStatus ?? 'No runs') | humanize }}</span>
+            <span class="kpi-foot">
+              {{ d.executive.pipeline.successfulRuns }} of {{ d.executive.pipeline.runs }} runs successful
+              @if (d.executive.pipeline.lastValidRatePercent != null) { · last {{ d.executive.pipeline.lastValidRatePercent | number: '1.1-1' }}% valid }
+            </span>
+          </article>
+        </section>
+        <section class="grid two">
+          <article class="panel">
+            <h2>Daily transaction volume</h2>
+            <app-time-series-chart [data]="daily()" kind="line" label="Transactions per day"
+              valueLabel="Transactions" secondaryLabel="Value (ZAR)" />
+          </article>
+          <article class="panel">
+            <h2>Flagged-transaction rate by month</h2>
+            <p class="muted small">Share of transactions with at least one potential exception.</p>
+            <app-time-series-chart [data]="flaggedRate()" kind="line" label="Flagged-transaction rate by month"
+              valueLabel="Flagged rate" unitSuffix="%" valueDigits="1.2-2" [tickDecimals]="1"
+              secondaryLabel="Flagged transactions" />
+          </article>
+        </section>
+      </mat-tab>
+
+      <!-- ============================== Transaction analysis ============================== -->
+      <mat-tab label="Transaction analysis">
+        <section class="grid two">
+          <article class="panel span-2">
+            <h2>Transaction volume by month</h2>
+            <app-time-series-chart [data]="monthly()" kind="bar" label="Transactions per month"
+              valueLabel="Transactions" secondaryLabel="Value (ZAR)" />
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>By merchant category</h2>
+              <mat-button-toggle-group [(ngModel)]="categoryMeasure" aria-label="Measure" hideSingleSelectionIndicator>
+                <mat-button-toggle value="value">Value</mat-button-toggle>
+                <mat-button-toggle value="count">Count</mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+            <app-bar-list [items]="bars(d.transactions.byCategory)" [measure]="categoryMeasure" [limit]="16"
+              label="Transactions by merchant category" />
+          </article>
+          <article class="panel">
+            <h2>Geographic distribution</h2>
+            <p class="muted small">Synthetic transaction locations (online transactions shown as Online).</p>
+            <app-bar-list [items]="bars(d.transactions.byLocation)" [humanizeKeys]="false" [limit]="13"
+              label="Transactions by location" />
+          </article>
+          <article class="panel">
+            <h2>Channels</h2>
+            <app-bar-list [items]="bars(d.transactions.byChannel)" label="Transactions by channel" />
+          </article>
+          <article class="panel">
+            <h2>Transaction types</h2>
+            <app-bar-list [items]="bars(d.transactions.byType)" label="Transactions by type" />
+          </article>
+        </section>
+      </mat-tab>
+
+      <!-- ============================== Risk analysis ============================== -->
+      <mat-tab label="Risk analysis">
+        <section class="grid two">
+          <article class="panel">
+            <h2>Exceptions by risk category</h2>
+            <app-bar-list [items]="bars(d.risk.byRiskCategory)" label="Exceptions by risk category" />
+          </article>
+          <article class="panel">
+            <h2>Exceptions by severity</h2>
+            <app-bar-list [items]="bySeverity()" label="Exceptions by severity" />
+          </article>
+          <article class="panel">
+            <h2>Rule-based versus model findings</h2>
+            <app-bar-list [items]="byDetector()" [humanizeKeys]="false" label="Exceptions by detector" />
+            <h3>Flagged transactions by detector</h3>
+            <app-bar-list [items]="overlap()" [humanizeKeys]="false" label="Flagged transactions by detector" />
+          </article>
+          <article class="panel">
+            <h2>Findings by month</h2>
+            <p class="muted small">Separate scales; by transaction date.</p>
+            <h3>Audit rules</h3>
+            <app-time-series-chart [data]="ruleTrend()" kind="bar" label="Rule findings per month" valueLabel="Rule findings" />
+            <h3>Anomaly model</h3>
+            <app-time-series-chart [data]="modelTrend()" kind="bar" label="Model findings per month" valueLabel="Model findings" />
+          </article>
+        </section>
+        @if (d.risk.topAccounts) {
+          <section class="panel">
+            <h2>Top accounts requiring review</h2>
+            <p class="muted small">Ranked by high-priority findings, then the number of different detectors, then total
+              findings. A ranking for review, not a judgement about the account holder.</p>
+            @if (d.risk.topAccounts.length === 0) {
+              <p class="muted">No potential exceptions in this range.</p>
+            } @else {
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr><th>Account</th><th>Type / branch</th><th class="num">Findings</th><th class="num">High priority</th>
+                      <th class="num">Rules</th><th class="num">Model</th><th class="num">Detectors</th>
+                      <th class="num">Flagged value</th><th class="num">Max score</th><th class="num">Awaiting review</th>
+                      <th class="num">Open cases</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (a of d.risk.topAccounts; track a.accountId) {
+                      <tr>
+                        <td><a [routerLink]="['/exceptions']" [queryParams]="{ accountId: a.accountId }">{{ a.accountId }}</a></td>
+                        <td>{{ a.accountType | humanize }} <span class="muted small">{{ a.branch }}</span></td>
+                        <td class="num">{{ a.exceptions | number }}</td>
+                        <td class="num">{{ a.highPriority | number }}</td>
+                        <td class="num">{{ a.ruleFindings | number }}</td>
+                        <td class="num">{{ a.modelFindings | number }}</td>
+                        <td class="num">{{ a.detectors }}</td>
+                        <td class="num">{{ a.flaggedAmount | currency: 'ZAR' : 'symbol-narrow' : '1.0-0' }}</td>
+                        <td class="num">{{ a.maxAnomalyScore == null ? '—' : (a.maxAnomalyScore | number: '1.3-3') }}</td>
+                        <td class="num">{{ a.awaitingReview | number }}</td>
+                        <td class="num">{{ a.openInvestigations | number }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
+      </mat-tab>
+
+      <!-- ============================== Investigation monitoring ============================== -->
+      <mat-tab label="Investigation monitoring">
+        <p class="muted small note">Current workload across all investigations (not limited by the date range).</p>
+        <section class="kpis" aria-label="Investigation indicators">
+          <article class="kpi">
+            <span class="kpi-label">Open investigations</span>
+            <span class="kpi-value">{{ d.investigations.open | number }}</span>
+            <span class="kpi-foot">{{ d.investigations.byStatus['NEW'] | number }} not yet started</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">In progress</span>
+            <span class="kpi-value">{{ d.investigations.inProgress | number }}</span>
+            <span class="kpi-foot">Under review, awaiting evidence or escalated</span>
+          </article>
+          <article class="kpi tone-good">
+            <span class="kpi-label">Resolved</span>
+            <span class="kpi-value">{{ d.investigations.resolved | number }}</span>
+            <span class="kpi-foot">Human-reviewed outcome recorded</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Average investigation duration</span>
+            <span class="kpi-value small">{{ hours(d.investigations.averageResolutionHours) }}</span>
+            <span class="kpi-foot">Oldest open: {{ hours(d.investigations.oldestOpenAgeHours) }}</span>
+          </article>
+          <article class="kpi accent-bad">
+            <span class="kpi-label">Findings awaiting auditor review</span>
+            <span class="kpi-value">{{ d.investigations.awaitingReview | number }}</span>
+            <span class="kpi-foot"><a routerLink="/exceptions" [queryParams]="{ status: 'OPEN' }">Open the list</a></span>
+          </article>
+        </section>
+        <section class="grid three">
+          <article class="panel">
+            <h2>By status</h2>
+            <app-bar-list [items]="investigationStatus()" label="Investigations by status" />
+          </article>
+          <article class="panel">
+            <h2>Recorded outcomes</h2>
+            @if (d.investigations.byOutcome.length) {
+              <app-bar-list [items]="bars(d.investigations.byOutcome)" label="Investigations by outcome" />
+            } @else { <p class="muted small">No outcomes recorded yet.</p> }
+          </article>
+          <article class="panel">
+            <h2>Open cases by assignee</h2>
+            @if (d.investigations.openByAssignee.length) {
+              <app-bar-list [items]="bars(d.investigations.openByAssignee)" [humanizeKeys]="false" label="Open investigations by assignee" />
+            } @else { <p class="muted small">No open investigations.</p> }
+          </article>
+        </section>
+      </mat-tab>
+    </mat-tab-group>
+  }
+
+  @if (canExport && datasets().length) {
+    <section class="panel exports">
+      <h2>Analytical datasets</h2>
+      <p class="muted small">CSV extracts of the analytics views, for Power BI or other tools (downloads are audited).
+        Power BI can also connect to PostgreSQL directly with the read-only reporting login.</p>
+      <div class="dataset-list">
+        @for (ds of datasets(); track ds) {
+          <button mat-stroked-button (click)="download(ds)" [disabled]="downloading() !== null">
+            <mat-icon>download</mat-icon> {{ ds }}
+          </button>
+        }
+      </div>
+    </section>
+  }
+}

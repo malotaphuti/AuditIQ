@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "463a23b69d705aa4aaba",
+  "position": {
+    "x": 830,
+    "y": 455,
+    "z": 0,
+    "width": 430,
+    "height": 245
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "risk_category"
+                }
+              },
+              "queryRef": "fact_exceptions.risk_category",
+              "nativeQueryRef": "risk_category"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Potential Exceptions"
+                }
+              },
+              "queryRef": "fact_exceptions.Potential Exceptions",
+              "nativeQueryRef": "Potential Exceptions"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Potential exceptions by risk category'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

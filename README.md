@@ -14,8 +14,8 @@ controlled investigation agent – with human review of every outcome.
 | 2 | Synthetic data generator, ingestion pipeline, data quality, transactions | ✅ Complete |
 | 3 | SQL audit rules, exceptions, investigation management | ✅ Complete |
 | 4 | Isolation Forest model & evaluation | ✅ Complete |
-| 5 | Angular analytics + Power BI | ⏳ Next |
-| 6 | RAG assistant | — |
+| 5 | Angular analytics + Power BI | ✅ Complete |
+| 6 | RAG assistant | ⏳ Next |
 | 7 | AI investigation agent | — |
 | 8 | Hardening, docs, deployment | — |
 
@@ -33,6 +33,7 @@ Angular SPA ──► nginx ──► Spring Boot API (JWT, RBAC, audit log) ─
 * [Phase 2 data engineering](docs/phase-2-data-engineering.md)
 * [Phase 3 audit analytics & investigations](docs/phase-3-audit-analytics.md)
 * [Phase 4 anomaly model](docs/phase-4-anomaly-model.md)
+* [Phase 5 business intelligence](docs/phase-5-business-intelligence.md) · [Power BI report](powerbi/README.md)
 * API documentation: Swagger UI at `http://localhost:4200/swagger-ui.html` once running
 
 ## Repository layout
@@ -43,6 +44,8 @@ frontend/           Angular 20 + Angular Material – SPA served by nginx
 analytics-service/  Python 3.12 FastAPI – pipeline, rules engine, ML, RAG, agent
 database/init/      One-time PostgreSQL extension setup
 docs/               Architecture, ERD, phase plans
+powerbi/            Power BI project (TMDL model + PBIR report) and its generator
+data/               Pipeline inputs, generated feeds and model artifacts (git-ignored)
 .github/workflows/  CI
 ```
 
@@ -87,6 +90,13 @@ Exceptions**). The report shows precision, recall, F1, the confusion matrix, sco
 breakdown and a comparison with the audit rules. Scores measure how unusual a transaction is; they are not fraud
 probabilities. Administrators tune the thresholds under **Administration → Anomaly model**.
 
+### Risk analytics and Power BI
+
+**Risk Analytics** shows the executive, transaction, risk and investigation views for any date range, computed from
+the `analytics` views. Auditors and managers can also download those views as CSV. For Power BI, set
+`BI_READER_PASSWORD` in `.env` (this creates a read-only login limited to the `analytics` schema), then open
+`powerbi/AuditIQ.pbip` in Power BI Desktop and refresh. See [powerbi/README.md](powerbi/README.md).
+
 If a port is already in use on your machine (e.g. an Oracle listener on 8080 or a local PostgreSQL on 5432),
 change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 
@@ -102,8 +112,8 @@ change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 Set `TEST_DATABASE_ADMIN_URL=postgresql://user:pw@localhost:5432/postgres` to include the Python pipeline and
 audit-rule integration tests (each test module creates and drops a throw-away database). CI does this automatically.
 
-Latest results (Phase 4): backend **98/98**, frontend **76/76**, analytics service **106/106** (incl. 40 database
-integration tests), ruff clean, production build clean.
+Latest results (Phase 5): backend **104/104**, frontend **82/82**, analytics service **106/106** (incl. 40 database
+integration tests), ruff clean, production build clean, Power BI project schema-valid and in sync with its generator.
 
 ## Security & governance
 
@@ -119,6 +129,8 @@ integration tests), ruff clean, production build clean.
 * Audit findings are labelled as *potential* exceptions; only a person can record an investigation outcome, and every
   rule run, threshold change, exception view and investigation action is audited
 * Rule thresholds are validated against a stored schema and bound as SQL parameters; sort keys are whitelisted
+* Power BI uses a dedicated read-only login that can see only the `analytics` views; CSV exports are whitelisted,
+  formula-safe and audited
 * The anomaly model is unsupervised and never reads ground-truth labels; model versions, hyperparameters,
   thresholds and metrics are recorded, and scores are never presented as fraud probabilities
 

@@ -83,7 +83,7 @@
           Execution {{ x.batchRef ?? '#' + x.id }} started {{ x.startedAt | date: 'medium' }} by {{ x.executedBy }}.
         </p>
       }
-      @if (d.exception.anomalyScore !== null) {
+      @if (d.exception.anomalyScore != null) {
         <p class="small cross-check">
           Anomaly model score for this transaction: <strong>{{ d.exception.anomalyScore | number: '1.3-3' }}</strong>
           @if (d.exception.anomalyPriority) { ({{ d.exception.anomalyPriority | humanize }} priority) } @else { (below the flag threshold) }

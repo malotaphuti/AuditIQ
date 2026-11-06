@@ -1,0 +1,51 @@
+table dim_account
+	lineageTag: 83b734c0-7a42-50d0-b616-61f6570a42e7
+
+	column account_id
+		dataType: string
+		isKey
+		lineageTag: 3e6db3c7-ca77-5002-ac35-97359127a073
+		summarizeBy: none
+		sourceColumn: account_id
+
+	column customer_id
+		dataType: string
+		lineageTag: c189a482-013d-5239-a87d-4b2050f9070b
+		summarizeBy: none
+		sourceColumn: customer_id
+
+	column account_type
+		dataType: string
+		lineageTag: 48e0ddc4-9f21-54f8-985a-eab335a276c0
+		summarizeBy: none
+		sourceColumn: account_type
+
+	column account_status
+		dataType: string
+		lineageTag: 1898c143-164d-5eb2-ae76-8883cbb50f1e
+		summarizeBy: none
+		sourceColumn: account_status
+
+	column branch
+		dataType: string
+		lineageTag: 037a723a-91bf-5266-9bd4-c2f1150de1cb
+		summarizeBy: none
+		sourceColumn: branch
+
+	column opened_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: a46192ea-33d7-520c-ba2c-5ba3e8aa7f5d
+		summarizeBy: none
+		sourceColumn: opened_date
+
+	partition dim_account = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "dim_account"]}[Data],
+				    Selected = Table.SelectColumns(View, {"account_id", "customer_id", "account_type", "account_status", "branch", "opened_date"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"account_id", type text}, {"customer_id", type text}, {"account_type", type text}, {"account_status", type text}, {"branch", type text}, {"opened_date", type date}})
+				in
+				    Typed

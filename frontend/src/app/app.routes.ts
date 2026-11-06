@@ -7,6 +7,8 @@ const IMPLEMENTED: Record<string, Routes[number]['loadComponent']> = {
   pipeline: () => import('./features/pipeline/pipeline.component').then((m) => m.PipelineComponent),
   transactions: () => import('./features/transactions/transactions.component').then((m) => m.TransactionsComponent),
   exceptions: () => import('./features/exceptions/exceptions.component').then((m) => m.ExceptionsComponent),
+  'risk-analytics': () =>
+    import('./features/risk-analytics/risk-analytics.component').then((m) => m.RiskAnalyticsComponent),
   reports: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
   investigations: () =>
     import('./features/investigations/investigations.component').then((m) => m.InvestigationsComponent),

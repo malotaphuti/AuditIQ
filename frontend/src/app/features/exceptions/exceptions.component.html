@@ -149,7 +149,7 @@
               <p class="small">
                 {{ x.status | humanize }} · {{ x.startedAt | date: 'medium' }} by {{ x.executedBy }} ·
                 {{ x.matchesTotal ?? 0 | number }} matches, {{ x.exceptionsCreated | number }} new
-                @if (x.durationMs !== null) { · {{ x.durationMs | duration }} }
+                @if (x.durationMs != null) { · {{ x.durationMs | duration }} }
               </p>
               @if (x.errorMessage) { <p class="error small">{{ x.errorMessage }}</p> }
             }
@@ -274,7 +274,7 @@
           <th mat-header-cell *matHeaderCellDef mat-sort-header="anomalyScore" arrowPosition="before" class="num"
             title="Active anomaly model score (unusualness, not fraud probability)">Anomaly score</th>
           <td mat-cell *matCellDef="let e" class="num">
-            @if (e.anomalyScore !== null) {
+            @if (e.anomalyScore != null) {
               {{ e.anomalyScore | number: '1.3-3' }}
               @if (e.anomalyPriority) { <span class="muted small">{{ e.anomalyPriority | humanize }}</span> }
             } @else { <span class="muted">—</span> }

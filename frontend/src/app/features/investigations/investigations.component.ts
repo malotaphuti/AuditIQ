@@ -137,7 +137,7 @@ export class InvestigationsComponent implements OnInit {
   }
 
   formatHours(hours: number | null): string {
-    if (hours === null) {
+    if (hours == null) {
       return '—';
     }
     if (hours < 0.1) {

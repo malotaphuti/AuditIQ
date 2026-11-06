@@ -1,0 +1,9 @@
+expression PgServer = "localhost:5433" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 2dc2fca8-6c7f-509a-85f8-1cc5c280ef5c
+
+	annotation PBI_ResultType = Text
+
+expression PgDatabase = "auditiq" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 248034dd-0218-5600-90cf-d88d231aee9a
+
+	annotation PBI_ResultType = Text

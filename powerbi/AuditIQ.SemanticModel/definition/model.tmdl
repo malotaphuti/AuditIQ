@@ -1,0 +1,21 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table dim_date
+ref table dim_account
+ref table dim_merchant
+ref table dim_detector
+ref table fact_transactions
+ref table fact_exceptions
+ref table fact_investigations
+ref table fact_pipeline_runs
+ref table fact_model_versions
+
+ref cultureInfo en-US

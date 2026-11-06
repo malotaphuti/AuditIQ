@@ -1,0 +1,169 @@
+table fact_transactions
+	lineageTag: 71593528-2244-52ba-84dc-81a853e711ae
+
+	measure 'Total Transactions' = COUNTROWS(fact_transactions)
+		formatString: #,0
+		lineageTag: 152fb66e-16ba-5191-a435-ef0c5d19814d
+
+	measure 'Total Transaction Value' = SUM(fact_transactions[amount])
+		formatString: \R #,0
+		lineageTag: 6c9c7e7d-8a22-56ba-a9c5-c7c362b5cb5c
+
+	measure 'Flagged Transactions' = CALCULATE(COUNTROWS(fact_transactions), fact_transactions[is_flagged] = TRUE())
+		formatString: #,0
+		lineageTag: 3f9ef7d8-19f1-5a58-b674-5440684ea750
+
+	measure 'Exception Rate %' = DIVIDE([Flagged Transactions], [Total Transactions])
+		formatString: 0.00%
+		lineageTag: c1394fc2-e916-5ea0-87a0-5cc93c6a7200
+
+	column transaction_id
+		dataType: string
+		lineageTag: 74935d0b-c0f1-5755-bcfe-a5b60e0a576e
+		summarizeBy: none
+		sourceColumn: transaction_id
+
+	column date_key
+		dataType: int64
+		isHidden
+		lineageTag: 62415e81-362f-5b44-9985-790afac08369
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column transaction_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: f5e24854-80e1-5bf5-9c04-847783f9b256
+		summarizeBy: none
+		sourceColumn: transaction_date
+
+	column local_hour
+		dataType: int64
+		formatString: 0
+		lineageTag: b271c99e-a739-5e6a-92e5-1bad20c9b3be
+		summarizeBy: none
+		sourceColumn: local_hour
+
+	column account_id
+		dataType: string
+		lineageTag: ea7b80a3-932a-52a3-9784-f5322863905a
+		summarizeBy: none
+		sourceColumn: account_id
+
+	column customer_id
+		dataType: string
+		lineageTag: 76aea5f0-d416-5a34-92a1-192e0b962edd
+		summarizeBy: none
+		sourceColumn: customer_id
+
+	column merchant_id
+		dataType: string
+		lineageTag: 3a2f8033-a4dc-53fb-a081-93e743c4a537
+		summarizeBy: none
+		sourceColumn: merchant_id
+
+	column amount
+		dataType: decimal
+		formatString: \R #,0.00
+		lineageTag: 95592c67-f5f5-547b-a39d-1ed829486865
+		summarizeBy: sum
+		sourceColumn: amount
+
+	column transaction_type
+		dataType: string
+		lineageTag: 285edf60-a55a-5465-8bc0-44764d113f5d
+		summarizeBy: none
+		sourceColumn: transaction_type
+
+	column transaction_channel
+		dataType: string
+		lineageTag: ab795e80-3558-54de-a681-b65ade921534
+		summarizeBy: none
+		sourceColumn: transaction_channel
+
+	column merchant_category
+		dataType: string
+		lineageTag: cab77432-2c23-5044-a5c4-3d48edf7decb
+		summarizeBy: none
+		sourceColumn: merchant_category
+
+	column location
+		dataType: string
+		lineageTag: b6b5c986-a6cb-561f-82a5-0c2177681845
+		summarizeBy: none
+		sourceColumn: location
+
+	column account_type
+		dataType: string
+		lineageTag: b5326c97-7a5d-5b34-8959-ee40716c8561
+		summarizeBy: none
+		sourceColumn: account_type
+
+	column transaction_status
+		dataType: string
+		lineageTag: 59e62bf7-9047-50b3-9e68-b69a73820e84
+		summarizeBy: none
+		sourceColumn: transaction_status
+
+	column approval_status
+		dataType: string
+		lineageTag: 6b7912a6-8ca1-5e6f-a81e-79ac1dd508a0
+		summarizeBy: none
+		sourceColumn: approval_status
+
+	column approval_threshold
+		dataType: decimal
+		formatString: \R #,0.00
+		lineageTag: beae9f8c-5b1f-5b4b-9595-3f135f9f9c37
+		summarizeBy: none
+		sourceColumn: approval_threshold
+
+	column rule_findings
+		dataType: int64
+		formatString: 0
+		lineageTag: cf30d043-3de1-5f09-8cf2-df22ea4ec33a
+		summarizeBy: none
+		sourceColumn: rule_findings
+
+	column model_findings
+		dataType: int64
+		formatString: 0
+		lineageTag: 961cfe62-d293-593e-9abd-f8c7f50c2d25
+		summarizeBy: none
+		sourceColumn: model_findings
+
+	column is_flagged
+		dataType: boolean
+		lineageTag: 82c8a8ac-8e46-5269-8735-a059934acced
+		summarizeBy: none
+		sourceColumn: is_flagged
+
+	column anomaly_score
+		dataType: double
+		formatString: 0.000
+		lineageTag: fd247165-2db8-5bcc-82a8-ad8737b13d4b
+		summarizeBy: none
+		sourceColumn: anomaly_score
+
+	column anomaly_priority
+		dataType: string
+		lineageTag: b43f3995-4c41-58c5-8883-e952920fc2ff
+		summarizeBy: none
+		sourceColumn: anomaly_priority
+
+	column pipeline_run_id
+		dataType: int64
+		lineageTag: 2851ec9d-b636-518a-81db-9e93681f9816
+		summarizeBy: none
+		sourceColumn: pipeline_run_id
+
+	partition fact_transactions = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "fact_transactions"]}[Data],
+				    Selected = Table.SelectColumns(View, {"transaction_id", "date_key", "transaction_date", "local_hour", "account_id", "customer_id", "merchant_id", "amount", "transaction_type", "transaction_channel", "merchant_category", "location", "account_type", "transaction_status", "approval_status", "approval_threshold", "rule_findings", "model_findings", "is_flagged", "anomaly_score", "anomaly_priority", "pipeline_run_id"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"transaction_id", type text}, {"date_key", Int64.Type}, {"transaction_date", type date}, {"local_hour", Int64.Type}, {"account_id", type text}, {"customer_id", type text}, {"merchant_id", type text}, {"amount", Currency.Type}, {"transaction_type", type text}, {"transaction_channel", type text}, {"merchant_category", type text}, {"location", type text}, {"account_type", type text}, {"transaction_status", type text}, {"approval_status", type text}, {"approval_threshold", Currency.Type}, {"rule_findings", Int64.Type}, {"model_findings", Int64.Type}, {"is_flagged", type logical}, {"anomaly_score", type number}, {"anomaly_priority", type text}, {"pipeline_run_id", Int64.Type}})
+				in
+				    Typed

@@ -32,7 +32,7 @@ public abstract class AbstractIntegrationTest {
     public static final String MANAGER_PASSWORD = "Manager#Passw0rd!";
 
     @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
 
     static {

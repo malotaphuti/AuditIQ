@@ -1,0 +1,168 @@
+table fact_investigations
+	lineageTag: eec0adde-ab3f-5a90-b52c-8c465c988a2b
+
+	measure 'Investigations' = COUNTROWS(fact_investigations)
+		formatString: #,0
+		lineageTag: a53e91e1-c9ff-53df-a56d-4e7996420b8b
+
+	measure 'Open Investigations' = CALCULATE(COUNTROWS(fact_investigations), fact_investigations[is_open] = TRUE())
+		formatString: #,0
+		lineageTag: e8a34ac7-6622-5f8b-886a-faedd23de196
+
+	measure 'Investigations In Progress' = CALCULATE(COUNTROWS(fact_investigations), fact_investigations[status] IN {"UNDER_REVIEW", "AWAITING_EVIDENCE", "ESCALATED"})
+		formatString: #,0
+		lineageTag: 31dce7ab-6a70-54f2-b3b2-8a553ae45dfd
+
+	measure 'Resolved Investigations' = CALCULATE(COUNTROWS(fact_investigations), fact_investigations[status] = "RESOLVED")
+		formatString: #,0
+		lineageTag: 48bd3963-4dca-5d78-8d74-fb8a0b5124c3
+
+	measure 'Average Investigation Duration (h)' = AVERAGE(fact_investigations[resolution_hours])
+		formatString: #,0.0
+		lineageTag: 53df9398-ac0c-58d4-9f97-7a7c8f96f37e
+
+	column investigation_id
+		dataType: int64
+		lineageTag: f0972297-c7ed-5d45-be40-c1c405555085
+		summarizeBy: none
+		sourceColumn: investigation_id
+
+	column investigation_ref
+		dataType: string
+		lineageTag: 961e2e16-0ce5-5fb6-9252-aa1c2a2fb7c2
+		summarizeBy: none
+		sourceColumn: investigation_ref
+
+	column exception_id
+		dataType: int64
+		lineageTag: 2bfd501e-4700-50c8-8ebe-2900bbbe561c
+		summarizeBy: none
+		sourceColumn: exception_id
+
+	column exception_ref
+		dataType: string
+		lineageTag: 3c1713ef-ee04-5f10-bc31-182b1c9bde0d
+		summarizeBy: none
+		sourceColumn: exception_ref
+
+	column detector_key
+		dataType: string
+		isHidden
+		lineageTag: e249c855-9785-567b-ae79-64c5a59ef2a2
+		summarizeBy: none
+		sourceColumn: detector_key
+
+	column account_id
+		dataType: string
+		lineageTag: f936482f-249c-5f56-8e01-08dc4c2c961a
+		summarizeBy: none
+		sourceColumn: account_id
+
+	column risk_category
+		dataType: string
+		lineageTag: 03a27e2f-e3b2-5fe4-b9a2-23c28bd7f288
+		summarizeBy: none
+		sourceColumn: risk_category
+
+	column status
+		dataType: string
+		lineageTag: f27fcd5f-9499-518a-9da6-68ece83002b8
+		summarizeBy: none
+		sourceColumn: status
+
+	column is_open
+		dataType: boolean
+		lineageTag: c8cd6a49-091c-53fe-9d1e-995244728db4
+		summarizeBy: none
+		sourceColumn: is_open
+
+	column priority
+		dataType: string
+		lineageTag: 1b7b495a-6b99-55a5-8bd8-7333720f8021
+		summarizeBy: none
+		sourceColumn: priority
+
+	column outcome
+		dataType: string
+		lineageTag: f052d125-d6db-5ad3-9009-54ab916e2194
+		summarizeBy: none
+		sourceColumn: outcome
+
+	column assigned_to
+		dataType: string
+		lineageTag: a72e4ca1-346a-54ff-8381-6c32d8572d4a
+		summarizeBy: none
+		sourceColumn: assigned_to
+
+	column created_by
+		dataType: string
+		lineageTag: 7bbb5e5e-783c-5e69-a79d-bb70556b5139
+		summarizeBy: none
+		sourceColumn: created_by
+
+	column created_at
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 097ea58b-74e5-54c8-9daf-63d622846669
+		summarizeBy: none
+		sourceColumn: created_at
+
+	column created_date_key
+		dataType: int64
+		isHidden
+		lineageTag: 686a51e7-0747-5f1f-936a-777855198c97
+		summarizeBy: none
+		sourceColumn: created_date_key
+
+	column resolved_at
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: a3516ebc-e7a5-5ea2-abe3-d36ecebc1037
+		summarizeBy: none
+		sourceColumn: resolved_at
+
+	column resolved_date_key
+		dataType: int64
+		isHidden
+		lineageTag: 9d9b8c70-5a91-5326-bf9a-b3163e5c8b60
+		summarizeBy: none
+		sourceColumn: resolved_date_key
+
+	column resolution_hours
+		dataType: double
+		formatString: 0.000
+		lineageTag: fdb61790-6f64-5564-914e-920fe0ea3670
+		summarizeBy: none
+		sourceColumn: resolution_hours
+
+	column age_hours
+		dataType: double
+		formatString: 0.000
+		lineageTag: 2beacae0-6ec3-5de4-824b-6aa8f2a249da
+		summarizeBy: none
+		sourceColumn: age_hours
+
+	column notes
+		dataType: int64
+		formatString: 0
+		lineageTag: 45c349c8-b39b-5ba9-a57d-ae4de73afc98
+		summarizeBy: none
+		sourceColumn: notes
+
+	column status_changes
+		dataType: int64
+		formatString: 0
+		lineageTag: 6366fcdd-a60d-5b6c-8f99-74b98a32fe9f
+		summarizeBy: none
+		sourceColumn: status_changes
+
+	partition fact_investigations = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "fact_investigations"]}[Data],
+				    Selected = Table.SelectColumns(View, {"investigation_id", "investigation_ref", "exception_id", "exception_ref", "detector_key", "account_id", "risk_category", "status", "is_open", "priority", "outcome", "assigned_to", "created_by", "created_at", "created_date_key", "resolved_at", "resolved_date_key", "resolution_hours", "age_hours", "notes", "status_changes"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"investigation_id", Int64.Type}, {"investigation_ref", type text}, {"exception_id", Int64.Type}, {"exception_ref", type text}, {"detector_key", type text}, {"account_id", type text}, {"risk_category", type text}, {"status", type text}, {"is_open", type logical}, {"priority", type text}, {"outcome", type text}, {"assigned_to", type text}, {"created_by", type text}, {"created_at", type datetime}, {"created_date_key", Int64.Type}, {"resolved_at", type datetime}, {"resolved_date_key", Int64.Type}, {"resolution_hours", type number}, {"age_hours", type number}, {"notes", Int64.Type}, {"status_changes", Int64.Type}})
+				in
+				    Typed

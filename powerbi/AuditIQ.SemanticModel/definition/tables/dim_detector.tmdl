@@ -1,0 +1,50 @@
+table dim_detector
+	lineageTag: f81d8a9a-e058-5898-be4e-94a5451547c2
+
+	column detector_key
+		dataType: string
+		isKey
+		lineageTag: 278d964c-880a-5a37-9dc2-82571732eddd
+		summarizeBy: none
+		sourceColumn: detector_key
+
+	column detector_name
+		dataType: string
+		lineageTag: f044420f-b42f-5638-877b-4610894c5e0b
+		summarizeBy: none
+		sourceColumn: detector_name
+
+	column detector_type
+		dataType: string
+		lineageTag: 62ec8ae9-c49d-5817-af34-825a9f2b1f5b
+		summarizeBy: none
+		sourceColumn: detector_type
+
+	column risk_category
+		dataType: string
+		lineageTag: 1772f2b9-fe41-518c-8e47-922ec7a6e411
+		summarizeBy: none
+		sourceColumn: risk_category
+
+	column default_severity
+		dataType: string
+		lineageTag: d0879e49-84bb-5eae-b69d-a452fbfc5aef
+		summarizeBy: none
+		sourceColumn: default_severity
+
+	column enabled
+		dataType: boolean
+		lineageTag: 1bafc12b-227c-55ff-80a8-8fe4821a4e68
+		summarizeBy: none
+		sourceColumn: enabled
+
+	partition dim_detector = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "dim_detector"]}[Data],
+				    Selected = Table.SelectColumns(View, {"detector_key", "detector_name", "detector_type", "risk_category", "default_severity", "enabled"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"detector_key", type text}, {"detector_name", type text}, {"detector_type", type text}, {"risk_category", type text}, {"default_severity", type text}, {"enabled", type logical}})
+				in
+				    Typed

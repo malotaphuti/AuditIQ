@@ -1,0 +1,94 @@
+table dim_date
+	lineageTag: 9f0e79d8-1668-55be-9d1a-8410ae36390b
+
+	column date_key
+		dataType: int64
+		isKey
+		lineageTag: d9b6d37f-d8ac-59dd-9248-267cde990d4f
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column calendar_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: f145a660-bd7d-57c2-bd36-6f21f351794a
+		summarizeBy: none
+		sourceColumn: calendar_date
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 2e48dabe-1029-5714-af4a-e505c9434132
+		summarizeBy: none
+		sourceColumn: year
+
+	column quarter
+		dataType: string
+		lineageTag: 131498a2-72b2-511d-ac74-d5f75aa83c25
+		summarizeBy: none
+		sourceColumn: quarter
+
+	column month_number
+		dataType: int64
+		formatString: 0
+		lineageTag: 40e16ce5-bafb-5157-8372-113f5ac7c7dd
+		summarizeBy: none
+		sourceColumn: month_number
+
+	column month_name
+		dataType: string
+		lineageTag: fb907267-d838-5461-b935-efc7363d09ff
+		summarizeBy: none
+		sourceColumn: month_name
+		sortByColumn: month_number
+
+	column month_label
+		dataType: string
+		lineageTag: 521871c3-1b25-561e-a25a-39fb0db8dfb5
+		summarizeBy: none
+		sourceColumn: month_label
+		sortByColumn: year_month
+
+	column year_month
+		dataType: string
+		lineageTag: b7a6a11b-a94f-5852-bdf6-d9b1e1612b2f
+		summarizeBy: none
+		sourceColumn: year_month
+
+	column iso_week
+		dataType: int64
+		formatString: 0
+		lineageTag: 2a2e3187-9580-5a8b-a5c8-f79f1d234c62
+		summarizeBy: none
+		sourceColumn: iso_week
+
+	column day_of_week
+		dataType: int64
+		formatString: 0
+		lineageTag: aef5acf8-9b16-52eb-a56a-46cee9e008f2
+		summarizeBy: none
+		sourceColumn: day_of_week
+
+	column day_name
+		dataType: string
+		lineageTag: 248fb5a3-a3b3-5a51-94d3-0e7070137478
+		summarizeBy: none
+		sourceColumn: day_name
+		sortByColumn: day_of_week
+
+	column is_weekend
+		dataType: boolean
+		lineageTag: 5f778a30-83e6-5531-b4af-6cbcf76929fb
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "dim_date"]}[Data],
+				    Selected = Table.SelectColumns(View, {"date_key", "calendar_date", "year", "quarter", "month_number", "month_name", "month_label", "year_month", "iso_week", "day_of_week", "day_name", "is_weekend"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"date_key", Int64.Type}, {"calendar_date", type date}, {"year", Int64.Type}, {"quarter", type text}, {"month_number", Int64.Type}, {"month_name", type text}, {"month_label", type text}, {"year_month", type text}, {"iso_week", Int64.Type}, {"day_of_week", Int64.Type}, {"day_name", type text}, {"is_weekend", type logical}})
+				in
+				    Typed

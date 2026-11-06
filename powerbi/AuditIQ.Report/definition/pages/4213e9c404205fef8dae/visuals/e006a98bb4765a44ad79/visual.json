@@ -1,0 +1,58 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "e006a98bb4765a44ad79",
+  "position": {
+    "x": 228,
+    "y": 80,
+    "z": 0,
+    "width": 198,
+    "height": 110
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_exceptions"
+                    }
+                  },
+                  "Property": "Potential Exceptions"
+                }
+              },
+              "queryRef": "fact_exceptions.Potential Exceptions",
+              "nativeQueryRef": "Potential Exceptions"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Potential exceptions'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

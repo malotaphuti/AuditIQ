@@ -1,0 +1,187 @@
+table fact_exceptions
+	lineageTag: 6f81367e-ebc8-5dd9-bc10-9d145aa58ab3
+
+	measure 'Potential Exceptions' = COUNTROWS(fact_exceptions)
+		formatString: #,0
+		lineageTag: 0c54d6a0-53f1-5b01-b67d-a4f15eb0d8e6
+
+	measure 'High Priority Findings' = CALCULATE(COUNTROWS(fact_exceptions), fact_exceptions[is_high_priority] = TRUE())
+		formatString: #,0
+		lineageTag: 9db565f6-922d-5baa-bdbe-562d554bde8b
+
+	measure 'Rule Findings' = CALCULATE(COUNTROWS(fact_exceptions), fact_exceptions[detection_source] = "RULE")
+		formatString: #,0
+		lineageTag: d1734fdf-0597-5c8f-bd08-0b98b629a59c
+
+	measure 'Model Findings' = CALCULATE(COUNTROWS(fact_exceptions), fact_exceptions[detection_source] = "ML")
+		formatString: #,0
+		lineageTag: 0491fb7f-fbf4-5884-83e1-d2f3e65b86b9
+
+	measure 'Findings Awaiting Review' = CALCULATE(COUNTROWS(fact_exceptions), fact_exceptions[exception_status] = "OPEN")
+		formatString: #,0
+		lineageTag: a38a1172-caa7-5a6b-8fa5-912e217d3c30
+
+	measure 'Flagged Value' = SUM(fact_exceptions[amount])
+		formatString: \R #,0
+		lineageTag: 0d60b0bf-d2c0-5648-b8b1-a647697f536f
+
+	measure 'Max Anomaly Score' = MAX(fact_exceptions[anomaly_score])
+		formatString: 0.000
+		lineageTag: b30d5c09-3f36-53ad-bd81-1dd91d71177a
+
+	column exception_id
+		dataType: int64
+		lineageTag: 95a98dc7-af00-5136-aa77-6678a673c4e4
+		summarizeBy: none
+		sourceColumn: exception_id
+
+	column exception_ref
+		dataType: string
+		lineageTag: 1d0a4fd4-4cd0-5c9a-8eab-e533bc7ae6f4
+		summarizeBy: none
+		sourceColumn: exception_ref
+
+	column detector_key
+		dataType: string
+		isHidden
+		lineageTag: e1d1956a-590f-5ba9-bb20-4888f0ee1ddf
+		summarizeBy: none
+		sourceColumn: detector_key
+
+	column detection_source
+		dataType: string
+		lineageTag: 3d529833-6d61-54b4-a6c7-8fc09bf6478d
+		summarizeBy: none
+		sourceColumn: detection_source
+
+	column transaction_id
+		dataType: string
+		lineageTag: 88c13789-1ac4-57be-8bb5-12dfdfb5f321
+		summarizeBy: none
+		sourceColumn: transaction_id
+
+	column account_id
+		dataType: string
+		lineageTag: 45df0340-acb6-545c-8e65-df8a2b6f2e99
+		summarizeBy: none
+		sourceColumn: account_id
+
+	column merchant_id
+		dataType: string
+		lineageTag: 2beefd8b-cff2-5380-9e7d-37f81190712f
+		summarizeBy: none
+		sourceColumn: merchant_id
+
+	column transaction_date_key
+		dataType: int64
+		isHidden
+		lineageTag: aaa43525-534a-5a41-910c-cef40de8d9f6
+		summarizeBy: none
+		sourceColumn: transaction_date_key
+
+	column detected_date_key
+		dataType: int64
+		isHidden
+		lineageTag: f71f8577-86f8-5e6f-8549-fc72a85fc048
+		summarizeBy: none
+		sourceColumn: detected_date_key
+
+	column transaction_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: c92c06eb-1dcf-5f77-aca5-ff1956426415
+		summarizeBy: none
+		sourceColumn: transaction_date
+
+	column severity
+		dataType: string
+		lineageTag: 245bf4cd-33ed-5b18-8a57-5cae38ba172d
+		summarizeBy: none
+		sourceColumn: severity
+		sortByColumn: severity_rank
+
+	column severity_rank
+		dataType: int64
+		formatString: 0
+		lineageTag: e6a39dc2-118d-5d23-83c1-18b67ab9e093
+		summarizeBy: none
+		sourceColumn: severity_rank
+
+	column is_high_priority
+		dataType: boolean
+		lineageTag: c1229448-43df-54a0-b175-16addb30aa27
+		summarizeBy: none
+		sourceColumn: is_high_priority
+
+	column risk_category
+		dataType: string
+		lineageTag: 180efbd9-7bd2-53bc-b2bd-bba2f767de53
+		summarizeBy: none
+		sourceColumn: risk_category
+
+	column exception_status
+		dataType: string
+		lineageTag: c9b5de48-a13c-5178-8e59-d2e5f1fd8562
+		summarizeBy: none
+		sourceColumn: exception_status
+
+	column amount
+		dataType: decimal
+		formatString: \R #,0.00
+		lineageTag: 782c76ef-4041-5a14-94a1-2be8d3924048
+		summarizeBy: sum
+		sourceColumn: amount
+
+	column transaction_type
+		dataType: string
+		lineageTag: 84aa1669-4a0f-523b-a376-7dce01fc9a89
+		summarizeBy: none
+		sourceColumn: transaction_type
+
+	column transaction_channel
+		dataType: string
+		lineageTag: 36fa5523-b5d6-535e-80d2-c96ee9a8796e
+		summarizeBy: none
+		sourceColumn: transaction_channel
+
+	column anomaly_score
+		dataType: double
+		formatString: 0.000
+		lineageTag: 267ff6e4-912f-5a26-b81d-8a61baf9c0d4
+		summarizeBy: none
+		sourceColumn: anomaly_score
+
+	column investigation_id
+		dataType: int64
+		lineageTag: 61f33132-dc88-527a-b1d8-7ac3bcd19ce0
+		summarizeBy: none
+		sourceColumn: investigation_id
+
+	column investigation_ref
+		dataType: string
+		lineageTag: 9c255ddc-62b7-5f6e-98d7-84d84092e3ad
+		summarizeBy: none
+		sourceColumn: investigation_ref
+
+	column investigation_status
+		dataType: string
+		lineageTag: 617561d9-1594-595c-ac7c-6cce4d2feb6b
+		summarizeBy: none
+		sourceColumn: investigation_status
+
+	column outcome
+		dataType: string
+		lineageTag: ce373821-69c4-54d3-8582-6972e1f9bbd5
+		summarizeBy: none
+		sourceColumn: outcome
+
+	partition fact_exceptions = m
+		mode: import
+		source =
+				let
+				    Source = PostgreSQL.Database(PgServer, PgDatabase),
+				    View = Source{[Schema = "analytics", Item = "fact_exceptions"]}[Data],
+				    Selected = Table.SelectColumns(View, {"exception_id", "exception_ref", "detector_key", "detection_source", "transaction_id", "account_id", "merchant_id", "transaction_date_key", "detected_date_key", "transaction_date", "severity", "severity_rank", "is_high_priority", "risk_category", "exception_status", "amount", "transaction_type", "transaction_channel", "anomaly_score", "investigation_id", "investigation_ref", "investigation_status", "outcome"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"exception_id", Int64.Type}, {"exception_ref", type text}, {"detector_key", type text}, {"detection_source", type text}, {"transaction_id", type text}, {"account_id", type text}, {"merchant_id", type text}, {"transaction_date_key", Int64.Type}, {"detected_date_key", Int64.Type}, {"transaction_date", type date}, {"severity", type text}, {"severity_rank", Int64.Type}, {"is_high_priority", type logical}, {"risk_category", type text}, {"exception_status", type text}, {"amount", Currency.Type}, {"transaction_type", type text}, {"transaction_channel", type text}, {"anomaly_score", type number}, {"investigation_id", Int64.Type}, {"investigation_ref", type text}, {"investigation_status", type text}, {"outcome", type text}})
+				in
+				    Typed

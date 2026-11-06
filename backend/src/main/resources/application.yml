@@ -59,6 +59,10 @@ auditiq:
     admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
     auditor-password: ${BOOTSTRAP_AUDITOR_PASSWORD:}
     manager-password: ${BOOTSTRAP_MANAGER_PASSWORD:}
+  bi:
+    # Read-only PostgreSQL login for Power BI (analytics schema only). Created/updated at start-up when a password is set.
+    reader-username: ${BI_READER_USERNAME:auditiq_bi}
+    reader-password: ${BI_READER_PASSWORD:}
   analytics-service:
     base-url: ${ANALYTICS_SERVICE_URL:http://localhost:8000}
     service-key: ${ANALYTICS_SERVICE_KEY:}

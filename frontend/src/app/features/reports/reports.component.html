@@ -126,7 +126,7 @@
                 <td class="num">{{ b.flagged | number }}</td>
                 <td class="num">{{ b.labelledAnomalies | number }}</td>
                 <td>
-                  @if (b.precision !== null) {
+                  @if (b.precision != null) {
                     <span class="inline-bar"><span [style.width.%]="b.precision * 100"></span></span>
                     {{ b.precision | percent: '1.0-0' }}
                   } @else { — }
