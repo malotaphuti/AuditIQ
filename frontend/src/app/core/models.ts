@@ -200,6 +200,13 @@ export interface TransactionRow {
   approvalStatus: string;
 }
 
+export interface AnomalyScore {
+  score: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  flagged: boolean;
+  modelVersion: string;
+}
+
 export interface TransactionDetail {
   transaction: TransactionRow;
   account: {
@@ -227,6 +234,8 @@ export interface TransactionDetail {
     status: string;
     detectedAt: string;
   }[];
+  /** Score from the active anomaly model, if one has been trained. */
+  anomaly?: AnomalyScore | null;
 }
 
 export interface Bucket {
@@ -377,6 +386,9 @@ export interface ExceptionRow {
   status: ExceptionStatus;
   reason: string;
   detectedAt: string;
+  /** Active anomaly model's score for the transaction (unusualness, not fraud probability). */
+  anomalyScore: number | null;
+  anomalyPriority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   investigation: InvestigationLink | null;
 }
 
@@ -544,4 +556,120 @@ export interface StatusChangeRequest {
   outcome?: InvestigationOutcome;
   outcomeSummary?: string;
   version: number;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Phase 4 – anomaly model
+// ---------------------------------------------------------------------------------------------------------------------
+export interface MlThresholds {
+  anomaly: number;
+  medium: number;
+  high: number;
+}
+
+export interface PrfMetrics {
+  precision: number;
+  recall: number;
+  f1: number;
+  truePositive: number;
+  falsePositive: number;
+  falseNegative: number;
+  flagged?: number;
+  rocAuc?: number;
+  averagePrecision?: number;
+}
+
+export interface ModelPerformance {
+  modelVersionId: number;
+  version: string;
+  trainedAt: string;
+  trainedBy: string;
+  trainingRows: number;
+  hyperparameters: Record<string, string | number>;
+  features: { name: string; label: string }[];
+  thresholds: MlThresholds;
+  exceptionMinPriority: 'LOW' | 'MEDIUM' | 'HIGH';
+  active: boolean;
+  algorithm: string;
+  scoredTransactions: number;
+  scoreNote: string;
+  evaluatedAt: string;
+  scoreDistribution: { from: number; to: number; labelled: number; unlabelled: number }[];
+  groundTruthAvailable: boolean;
+  flagged: number;
+  labelledAnomalies?: number;
+  confusionMatrix?: { truePositive: number; falsePositive: number; falseNegative: number; trueNegative: number };
+  metrics?: PrfMetrics;
+  priorityBands?: { priority: 'HIGH' | 'MEDIUM' | 'LOW'; from: number; flagged: number; labelledAnomalies: number;
+    precision: number | null }[];
+  recallByType?: { anomalyType: string; labelled: number; modelRecall: number; ruleRecall: number }[];
+  comparison?: {
+    rulesExecuted: boolean;
+    model: PrfMetrics;
+    rules?: PrfMetrics;
+    combined?: PrfMetrics;
+    overlap?: { bothDetected: number; rulesOnly: number; modelOnly: number; neither: number };
+  };
+  falsePositives?: {
+    count: number;
+    share: number;
+    alsoFlaggedByRules: number;
+    scoreMedian: number | null;
+    byTransactionType: { key: string; count: number }[];
+    byChannel: { key: string; count: number }[];
+    byTopFactor: { key: string; count: number }[];
+  };
+}
+
+export interface ModelVersion {
+  id: number;
+  version: string;
+  algorithm: string;
+  trainedAt: string;
+  trainedBy: string;
+  trainingRows: number;
+  hyperparameters: Record<string, string | number>;
+  features: { name: string; label: string }[];
+  priorityThresholds: MlThresholds;
+  metrics: { metrics?: PrfMetrics; flagged?: number; trainingDurationMs?: number };
+  active: boolean;
+  anomalies: number;
+  exceptions: number;
+}
+
+export interface TrainResult {
+  modelVersionId: number;
+  version: string;
+  trainingRows: number;
+  durationMs: number;
+}
+
+export interface DetectResult {
+  modelVersionId: number;
+  version: string;
+  newlyScored: number;
+  anomalies: number;
+  byPriority: Record<'HIGH' | 'MEDIUM' | 'LOW', number>;
+  exceptionsCreated: number;
+  exceptionMinPriority: 'LOW' | 'MEDIUM' | 'HIGH';
+  durationMs: number;
+}
+
+export interface MlSettings {
+  anomalyThreshold: number;
+  mediumThreshold: number;
+  highThreshold: number;
+  exceptionMinPriority: 'LOW' | 'MEDIUM' | 'HIGH';
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+
+export interface AnomalyFactor {
+  feature: string;
+  label: string;
+  description: string;
+  value: number;
+  typical: number;
+  deviation: number;
+  combined?: boolean;
 }

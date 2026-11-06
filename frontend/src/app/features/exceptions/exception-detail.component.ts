@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -7,17 +7,18 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { errorMessage } from '../../core/error-message';
-import { ExceptionDetail, InvestigationDetail } from '../../core/models';
+import { AnomalyFactor, ExceptionDetail, InvestigationDetail } from '../../core/models';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { Fact, toFacts } from '../../shared/facts';
 import { HumanizePipe } from '../../shared/humanize.pipe';
 import { OpenInvestigationDialogComponent } from './open-investigation-dialog.component';
 
-const HIDDEN_DETAIL_KEYS = ['thresholds', 'relatedTransactionIds', 'ruleVersion'];
+const HIDDEN_DETAIL_KEYS = ['thresholds', 'relatedTransactionIds', 'ruleVersion', 'factors', 'scoreNote',
+  'explanationMethod', 'modelVersionId', 'anomalyScore', 'priority', 'modelVersion'];
 
 @Component({
   selector: 'app-exception-detail',
-  imports: [CurrencyPipe, DatePipe, NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule,
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule,
     MatDialogModule, EmptyStateComponent, HumanizePipe],
   templateUrl: './exception-detail.component.html',
   styleUrl: './exception-detail.component.scss',
@@ -37,6 +38,18 @@ export class ExceptionDetailComponent {
   readonly thresholds = computed<Fact[]>(() =>
     toFacts(this.detail()?.details?.['thresholds'] as Record<string, unknown> | undefined),
   );
+  readonly isModel = computed(() => this.detail()?.exception.detectionSource === 'ML');
+  readonly factors = computed<AnomalyFactor[]>(() => (this.detail()?.details?.['factors'] as AnomalyFactor[]) ?? []);
+  readonly model = computed(() => {
+    const d = this.detail()?.details ?? {};
+    return {
+      score: d['anomalyScore'] as number | undefined,
+      priority: d['priority'] as string | undefined,
+      version: d['modelVersion'] as string | undefined,
+      method: d['explanationMethod'] as string | undefined,
+      note: d['scoreNote'] as string | undefined,
+    };
+  });
   readonly ruleVersion = computed(() => this.detail()?.details?.['ruleVersion'] as number | undefined);
 
   constructor() {

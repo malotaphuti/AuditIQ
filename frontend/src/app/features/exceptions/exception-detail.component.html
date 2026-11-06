@@ -9,7 +9,7 @@
         <span class="chip" [class]="'st-' + d.exception.status">{{ d.exception.status | humanize }}</span>
       </h1>
       <p class="subtitle">
-        {{ d.exception.ruleName ?? 'Anomaly model finding' }} · {{ d.exception.riskCategory | humanize }} ·
+        {{ isModel() ? 'Anomaly model finding' : d.exception.ruleName }} · {{ d.exception.riskCategory | humanize }} ·
         detected {{ d.exception.detectedAt | date: 'medium' }}
       </p>
     </div>
@@ -27,16 +27,39 @@
   <aside class="notice" role="note">
     <mat-icon aria-hidden="true">info</mat-icon>
     <p>
-      This is a <strong>potential exception</strong> identified by an automated rule. A rule match is not evidence of
-      wrongdoing by any customer, employee or vendor. An authorised auditor must review the evidence and record the
+      This is a <strong>potential exception</strong> identified by
+      {{ isModel() ? 'the anomaly detection model' : 'an automated rule' }}. It is not evidence of wrongdoing by any
+      customer, employee or vendor. An authorised auditor must review the evidence and record the
       outcome.
     </p>
   </aside>
 
   <section class="grid">
     <article class="panel">
-      <span class="provenance analytical">Analytical finding</span>
+      <span class="provenance analytical">Analytical finding · {{ isModel() ? 'anomaly model' : 'audit rule' }}</span>
       <h2>Why it was flagged</h2>
+      @if (isModel()) {
+        <div class="score-row">
+          <div class="score"><span class="score-value">{{ model().score | number: '1.3-3' }}</span><span class="muted small">anomaly score</span></div>
+          <p class="small muted">
+            {{ model().priority | humanize }} priority from model <code>{{ model().version }}</code>. {{ model().note }}
+          </p>
+        </div>
+        <h3>Contributing factors</h3>
+        <ol class="factors">
+          @for (f of factors(); track f.feature) {
+            <li>
+              <strong>{{ f.description }}</strong>
+              <span class="muted small">{{ f.label }} · {{ f.combined ? 'no single feature stands out; the combination is unusual' : (f.deviation | number: '1.1-1') + ' robust deviations from typical' }}</span>
+            </li>
+          }
+        </ol>
+        @if (model().method) { <p class="small muted">Method: {{ model().method }}</p> }
+        <h3>Thresholds applied</h3>
+        <dl class="facts">
+          @for (t of thresholds(); track t.label) { <dt>{{ t.label }}</dt><dd>{{ t.value }}</dd> }
+        </dl>
+      } @else {
       <p class="reason">{{ d.exception.reason }}</p>
       @if (facts().length) {
         <dl class="facts">
@@ -59,6 +82,13 @@
         <p class="small muted">
           Execution {{ x.batchRef ?? '#' + x.id }} started {{ x.startedAt | date: 'medium' }} by {{ x.executedBy }}.
         </p>
+      }
+      @if (d.exception.anomalyScore !== null) {
+        <p class="small cross-check">
+          Anomaly model score for this transaction: <strong>{{ d.exception.anomalyScore | number: '1.3-3' }}</strong>
+          @if (d.exception.anomalyPriority) { ({{ d.exception.anomalyPriority | humanize }} priority) } @else { (below the flag threshold) }
+        </p>
+      }
       }
     </article>
 

@@ -11,7 +11,7 @@ export const EXCEPTION: ExceptionRow = {
   transactionId: 'TXN2', accountId: 'ACC-000001', transactionDate: '2026-05-10T08:20:00Z', amount: 1500,
   transactionType: 'TRANSFER', severity: 'HIGH', riskCategory: 'PAYMENT_INTEGRITY', status: 'OPEN',
   reason: 'Same account, amount and business date as transaction TXN1.', detectedAt: '2026-11-05T10:00:00Z',
-  investigation: null,
+  anomalyScore: 0.612, anomalyPriority: 'MEDIUM', investigation: null,
 };
 
 const SUMMARY: ExceptionSummary = {
@@ -36,7 +36,11 @@ const RULE: AuditRule = {
 
 function setup(roles: RoleName[], queryParams: Record<string, string> = {}) {
   const api = jasmine.createSpyObj<ApiService>('ApiService',
-    ['exceptions', 'exceptionSummary', 'auditRules', 'executeAuditRules']);
+    ['exceptions', 'exceptionSummary', 'auditRules', 'executeAuditRules', 'detectAnomalies']);
+  api.detectAnomalies.and.returnValue(of({
+    modelVersionId: 1, version: 'IF-1', newlyScored: 0, anomalies: 30, byPriority: { HIGH: 10, MEDIUM: 5, LOW: 15 },
+    exceptionsCreated: 15, exceptionMinPriority: 'MEDIUM', durationMs: 900,
+  }));
   api.exceptions.and.returnValue(of({ content: [EXCEPTION], page: 0, size: 25, totalElements: 1, totalPages: 1 }));
   api.exceptionSummary.and.returnValue(of(SUMMARY));
   api.auditRules.and.returnValue(of([RULE]));
@@ -83,9 +87,23 @@ describe('ExceptionsComponent', () => {
     expect(api.exceptions).toHaveBeenCalledTimes(2);
   });
 
-  it('hides the run button from audit managers', () => {
+  it('hides the run buttons from audit managers', () => {
     const { el } = setup(['AUDIT_MANAGER']);
     expect(el.textContent).not.toContain('Run audit rules');
+    expect(el.textContent).not.toContain('Run anomaly detection');
+  });
+
+  it('runs anomaly detection, shows model scores and filters by detector', () => {
+    const { api, el, fixture } = setup(['AUDITOR']);
+    expect(el.textContent).toContain('0.612');
+    fixture.componentInstance.runDetection();
+    expect(api.detectAnomalies).toHaveBeenCalled();
+    expect(api.exceptions).toHaveBeenCalledTimes(2);
+    const c = fixture.componentInstance;
+    c.filters = { ...c.filters, source: 'ML' };
+    c.onSort({ active: 'anomalyScore', direction: 'desc' });
+    expect(api.exceptions.calls.mostRecent().args[0]).toEqual(
+      jasmine.objectContaining({ source: 'ML', sort: 'anomalyScore', direction: 'desc' }));
   });
 
   it('sends only populated filters and accepts filters from the URL', () => {

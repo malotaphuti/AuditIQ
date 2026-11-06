@@ -31,7 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: 'agent', label: 'AI Investigation Agent', icon: 'smart_toy', roles: ['AUDITOR'],
     plannedPhase: 7, description: 'Controlled agent that drafts investigation reports for human review.' },
   { path: 'reports', label: 'Reports', icon: 'summarize', roles: ['AUDITOR', 'AUDIT_MANAGER'],
-    plannedPhase: 5, description: 'Model performance, rule comparison and investigation reports.' },
+    description: 'Model performance, rule comparison and investigation reports.' },
   { path: 'admin', label: 'Administration', icon: 'admin_panel_settings', roles: ['ADMIN', 'AUDIT_MANAGER'],
     description: 'User management and audit-rule configuration (Administrators) and the audit trail.' },
 ];

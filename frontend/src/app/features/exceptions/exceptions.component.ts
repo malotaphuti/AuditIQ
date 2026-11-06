@@ -33,6 +33,7 @@ import { HumanizePipe } from '../../shared/humanize.pipe';
 export const SEVERITIES: Severity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 export const RISK_CATEGORIES = [
   'PAYMENT_INTEGRITY', 'APPROVAL_CONTROL', 'TRANSACTION_MONITORING', 'ACCOUNT_CONTROL', 'VENDOR_MANAGEMENT',
+  'BEHAVIOURAL_ANOMALY',
 ];
 export const EXCEPTION_STATUSES = ['OPEN', 'UNDER_INVESTIGATION', 'CLOSED'];
 
@@ -42,13 +43,14 @@ interface Filters {
   riskCategory: string;
   ruleId: string;
   status: string;
+  source: string;
   accountId: string;
   from: string;
   to: string;
 }
 
 const EMPTY_FILTERS: Filters = {
-  q: '', severity: '', riskCategory: '', ruleId: '', status: '', accountId: '', from: '', to: '',
+  q: '', severity: '', riskCategory: '', ruleId: '', status: '', source: '', accountId: '', from: '', to: '',
 };
 
 @Component({
@@ -72,7 +74,8 @@ export class ExceptionsComponent implements OnInit {
   readonly severities = SEVERITIES;
   readonly categories = RISK_CATEGORIES;
   readonly statuses = EXCEPTION_STATUSES;
-  readonly columns = ['exceptionRef', 'severity', 'rule', 'transactionDate', 'accountId', 'amount', 'reason', 'status'];
+  readonly columns = ['exceptionRef', 'severity', 'rule', 'transactionDate', 'accountId', 'amount', 'score', 'reason',
+    'status'];
 
   filters: Filters = { ...EMPTY_FILTERS };
   sort: Sort = { active: 'detectedAt', direction: 'desc' };
@@ -88,6 +91,7 @@ export class ExceptionsComponent implements OnInit {
   readonly rules = signal<AuditRule[]>([]);
   readonly rulesError = signal<string | null>(null);
   readonly executing = signal(false);
+  readonly detecting = signal(false);
   readonly lastRun = signal<ExecuteRulesResponse | null>(null);
 
   readonly byRule = computed<BarItem[]>(() =>
@@ -149,6 +153,27 @@ export class ExceptionsComponent implements OnInit {
     });
   }
 
+  runDetection(): void {
+    this.detecting.set(true);
+    this.api.detectAnomalies().subscribe({
+      next: (result) => {
+        this.detecting.set(false);
+        this.snack.open(
+          `Model ${result.version}: ${result.anomalies.toLocaleString()} unusual transactions, `
+            + `${result.exceptionsCreated.toLocaleString()} new potential exception(s)`,
+          'OK',
+          { duration: 6000 },
+        );
+        this.loadOverview();
+        this.apply();
+      },
+      error: (err) => {
+        this.detecting.set(false);
+        this.snack.open(errorMessage(err, 'Anomaly detection could not be run.'), 'Dismiss', { duration: 7000 });
+      },
+    });
+  }
+
   query(): ExceptionQuery {
     const f = this.filters;
     return {
@@ -157,6 +182,7 @@ export class ExceptionsComponent implements OnInit {
       riskCategory: f.riskCategory || undefined,
       ruleId: f.ruleId || undefined,
       status: f.status || undefined,
+      source: f.source || undefined,
       accountId: f.accountId.trim() || undefined,
       from: f.from || undefined,
       to: f.to || undefined,

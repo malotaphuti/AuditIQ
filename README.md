@@ -13,8 +13,8 @@ controlled investigation agent – with human review of every outcome.
 | 1 | Foundation: schema, Docker, Spring Boot API, auth/RBAC, audit trail, Angular shell | ✅ Complete |
 | 2 | Synthetic data generator, ingestion pipeline, data quality, transactions | ✅ Complete |
 | 3 | SQL audit rules, exceptions, investigation management | ✅ Complete |
-| 4 | Isolation Forest model & evaluation | ⏳ Next |
-| 5 | Angular analytics + Power BI | — |
+| 4 | Isolation Forest model & evaluation | ✅ Complete |
+| 5 | Angular analytics + Power BI | ⏳ Next |
 | 6 | RAG assistant | — |
 | 7 | AI investigation agent | — |
 | 8 | Hardening, docs, deployment | — |
@@ -32,6 +32,7 @@ Angular SPA ──► nginx ──► Spring Boot API (JWT, RBAC, audit log) ─
 * [Phase 1 plan & decisions](docs/phase-1-plan.md)
 * [Phase 2 data engineering](docs/phase-2-data-engineering.md)
 * [Phase 3 audit analytics & investigations](docs/phase-3-audit-analytics.md)
+* [Phase 4 anomaly model](docs/phase-4-anomaly-model.md)
 * API documentation: Swagger UI at `http://localhost:4200/swagger-ui.html` once running
 
 ## Repository layout
@@ -79,6 +80,13 @@ related transactions. **Open investigation** starts a case; on **Investigations*
 through review and record the human-reviewed outcome. Administrators tune rule thresholds under
 **Administration → Audit rules**.
 
+### Train the anomaly model
+
+As `auditor` → **Reports** → **Train new model** (about 10 s), then **Run anomaly detection** (here or on **Audit
+Exceptions**). The report shows precision, recall, F1, the confusion matrix, score distributions, a false-positive
+breakdown and a comparison with the audit rules. Scores measure how unusual a transaction is; they are not fraud
+probabilities. Administrators tune the thresholds under **Administration → Anomaly model**.
+
 If a port is already in use on your machine (e.g. an Oracle listener on 8080 or a local PostgreSQL on 5432),
 change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 
@@ -94,7 +102,7 @@ change `BACKEND_PORT` / `POSTGRES_PORT` in `.env`.
 Set `TEST_DATABASE_ADMIN_URL=postgresql://user:pw@localhost:5432/postgres` to include the Python pipeline and
 audit-rule integration tests (each test module creates and drops a throw-away database). CI does this automatically.
 
-Latest results (Phase 3): backend **92/92**, frontend **69/69**, analytics service **88/88** (incl. 27 database
+Latest results (Phase 4): backend **98/98**, frontend **76/76**, analytics service **106/106** (incl. 40 database
 integration tests), ruff clean, production build clean.
 
 ## Security & governance
@@ -111,6 +119,8 @@ integration tests), ruff clean, production build clean.
 * Audit findings are labelled as *potential* exceptions; only a person can record an investigation outcome, and every
   rule run, threshold change, exception view and investigation action is audited
 * Rule thresholds are validated against a stored schema and bound as SQL parameters; sort keys are whitelisted
+* The anomaly model is unsupervised and never reads ground-truth labels; model versions, hyperparameters,
+  thresholds and metrics are recorded, and scores are never presented as fraud probabilities
 
 ## Branching
 

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from app import db
 from app.config import get_settings
 from app.db import database_is_up
+from app.ml.model import AnomalyModelService, ModelBusyError, NoModelError, TrainingParams
 from app.pipeline import repository
 from app.pipeline.runner import MAX_TRANSACTIONS, MIN_TRANSACTIONS, PipelineRunner, RunRequest
 from app.rules.engine import RuleEngine, RulesBusyError
@@ -26,6 +27,7 @@ log = logging.getLogger(__name__)
 
 runner = PipelineRunner(db.connect, settings.data_dir)
 rule_engine = RuleEngine(db.connect)
+anomaly_model = AnomalyModelService(db.connect, settings.data_dir / "models")
 
 
 @asynccontextmanager
@@ -104,6 +106,47 @@ def execute_rules(body: RuleExecutionBody) -> dict:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+
+class TrainBody(BaseModel):
+    trained_by: str = Field(alias="trainedBy", min_length=1, max_length=50)
+    n_estimators: int = Field(default=200, alias="nEstimators", ge=50, le=1_000)
+    max_samples: int = Field(default=256, alias="maxSamples", ge=64, le=4_096)
+    seed: int = Field(default=42, ge=0, le=2**31 - 1)
+
+
+class DetectBody(BaseModel):
+    executed_by: str = Field(alias="executedBy", min_length=1, max_length=50)
+
+
+def _ml_call(fn):
+    try:
+        return fn()
+    except ModelBusyError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except NoModelError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+
+@internal.post("/ml/train")
+def train_model(body: TrainBody) -> dict:
+    """Trains a new Isolation Forest version on the curated layer, scores every transaction and activates it."""
+    params = TrainingParams(n_estimators=body.n_estimators, max_samples=body.max_samples, seed=body.seed)
+    return _ml_call(lambda: anomaly_model.train(body.trained_by, params))
+
+
+@internal.post("/ml/detect")
+def detect_anomalies(body: DetectBody) -> dict:
+    """Scores unscored transactions with the active model and records potential exceptions."""
+    return _ml_call(lambda: anomaly_model.detect(body.executed_by))
+
+
+@internal.get("/ml/performance")
+def model_performance(version_id: int | None = None) -> dict:
+    """Evaluation of a model version (active by default) against synthetic ground truth, compared with the rules."""
+    return _ml_call(lambda: anomaly_model.performance(version_id))
 
 
 app.include_router(internal)

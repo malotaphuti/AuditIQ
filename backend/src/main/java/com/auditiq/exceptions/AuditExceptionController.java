@@ -52,7 +52,7 @@ public class AuditExceptionController {
             @RequestParam(required = false) @Pattern(regexp = CODE) String accountId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(defaultValue = "detectedAt") @Pattern(regexp = "detectedAt|transactionDate|amount|severity")
+            @RequestParam(defaultValue = "detectedAt") @Pattern(regexp = "detectedAt|transactionDate|amount|severity|anomalyScore")
             String sort,
             @RequestParam(defaultValue = "desc") @Pattern(regexp = "asc|desc") String direction,
             @RequestParam(defaultValue = "0") @Min(0) int page,

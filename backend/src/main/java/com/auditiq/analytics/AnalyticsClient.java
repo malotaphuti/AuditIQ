@@ -97,6 +97,42 @@ public class AnalyticsClient {
                 .body(ExecuteRulesResult.class));
     }
 
+    public record TrainModelCommand(String trainedBy, Integer nEstimators, Integer maxSamples, Integer seed) {
+    }
+
+    /** Trains a new model version (synchronous); 409 when a model run is in progress. */
+    public JsonNode trainModel(TrainModelCommand command) {
+        return call(() -> longClient.post().uri("/internal/ml/train")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(mapper.createObjectNode().put("trainedBy", command.trainedBy())
+                        .put("nEstimators", command.nEstimators() == null ? 200 : command.nEstimators())
+                        .put("maxSamples", command.maxSamples() == null ? 256 : command.maxSamples())
+                        .put("seed", command.seed() == null ? 42 : command.seed()))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::translateError)
+                .body(JsonNode.class));
+    }
+
+    /** Scores unscored transactions with the active model and raises potential exceptions. */
+    public JsonNode detectAnomalies(String executedBy) {
+        return call(() -> longClient.post().uri("/internal/ml/detect")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("executedBy", executedBy))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::translateError)
+                .body(JsonNode.class));
+    }
+
+    /** Evaluation of a model version (active when {@code versionId} is null). */
+    public JsonNode modelPerformance(Long versionId) {
+        return call(() -> longClient.get()
+                .uri(b -> versionId == null ? b.path("/internal/ml/performance").build()
+                        : b.path("/internal/ml/performance").queryParam("version_id", versionId).build())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::translateError)
+                .body(JsonNode.class));
+    }
+
     private void translateError(org.springframework.http.HttpRequest req,
                                 org.springframework.http.client.ClientHttpResponse res) throws java.io.IOException {
         String detail = detail(res.getBody().readAllBytes());

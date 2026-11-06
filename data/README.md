@@ -11,3 +11,6 @@ Mounted into the analytics service at `/data`. Contents are git-ignored (synthet
   ```
 
 * `generated/<run-ref>/` – the raw feed produced by each **Synthetic generator** run, kept for traceability.
+
+* `models/<version>.joblib` – trained Isolation Forest artifacts (one per model version, referenced by
+  `ml_model_versions.artifact_path`). Retrain from **Reports → Train new model** if an artifact is removed.

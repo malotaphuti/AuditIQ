@@ -3,6 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AuditLogEntry,
+  DetectResult,
+  MlSettings,
+  ModelPerformance,
+  ModelVersion,
+  TrainResult,
   AuditRule,
   CreateInvestigationRequest,
   ExceptionDetail,
@@ -188,5 +193,30 @@ export class ApiService {
 
   addInvestigationNote(id: number, note: string): Observable<InvestigationDetail> {
     return this.http.post<InvestigationDetail>(`/api/investigations/${id}/notes`, { note });
+  }
+
+  // -- anomaly model ------------------------------------------------------------------------------------------------
+  trainModel(params: { nEstimators?: number; maxSamples?: number; seed?: number } = {}): Observable<TrainResult> {
+    return this.http.post<TrainResult>('/api/ml/train', params);
+  }
+
+  detectAnomalies(): Observable<DetectResult> {
+    return this.http.post<DetectResult>('/api/ml/detect', {});
+  }
+
+  modelPerformance(versionId?: number): Observable<ModelPerformance> {
+    return this.http.get<ModelPerformance>('/api/ml/model-performance', { params: params({ versionId }) });
+  }
+
+  modelVersions(): Observable<ModelVersion[]> {
+    return this.http.get<ModelVersion[]>('/api/ml/models');
+  }
+
+  mlSettings(): Observable<MlSettings> {
+    return this.http.get<MlSettings>('/api/ml/settings');
+  }
+
+  updateMlSettings(settings: Omit<MlSettings, 'updatedBy' | 'updatedAt'>): Observable<MlSettings> {
+    return this.http.put<MlSettings>('/api/ml/settings', settings);
   }
 }

@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "auditiq-analytics-service"
-    version: str = "0.3.0"
+    version: str = "0.4.0"
     database_url: str = Field(
         default="postgresql+psycopg://auditiq:auditiq@localhost:5432/auditiq",
         alias="ANALYTICS_DATABASE_URL",

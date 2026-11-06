@@ -75,6 +75,54 @@ h1 .chip {
   }
 }
 
+.score-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--aiq-surface);
+  flex: none;
+}
+
+.score-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.factors {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.875rem;
+
+  li {
+    margin-bottom: 8px;
+  }
+
+  span {
+    display: block;
+  }
+}
+
+.cross-check {
+  border-top: 1px solid var(--aiq-border);
+  padding-top: 8px;
+  margin-top: 12px;
+}
+
 .reason {
   font-size: 0.95rem;
   line-height: 1.5;

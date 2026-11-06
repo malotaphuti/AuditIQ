@@ -40,7 +40,11 @@ public final class TransactionDtos {
     }
 
     public record TransactionDetail(TransactionRow transaction, AccountInfo account, MerchantInfo merchant,
-                                    Lineage lineage, List<ExceptionRef> exceptions) {
+                                    Lineage lineage, List<ExceptionRef> exceptions, AnomalyScore anomaly) {
+    }
+
+    /** Score from the active anomaly model; measures unusualness, not fraud probability. */
+    public record AnomalyScore(BigDecimal score, String priority, boolean flagged, String modelVersion) {
     }
 
     public record Bucket(String key, long count, BigDecimal value) {

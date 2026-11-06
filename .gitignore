@@ -22,6 +22,7 @@ analytics-service/artifacts/
 # Data generated at runtime (folder structure is kept via .gitkeep)
 data/generated/*
 data/incoming/*
+data/models/*
 !data/**/.gitkeep
 
 # IDE / OS

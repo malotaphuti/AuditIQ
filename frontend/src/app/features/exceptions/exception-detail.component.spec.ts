@@ -71,6 +71,25 @@ describe('ExceptionDetailComponent', () => {
     expect(el.textContent).toContain('View INV-000004');
   });
 
+  it('explains model findings with the score, factors and a not-a-probability note', () => {
+    const { el, fixture } = setup(detail({
+      exception: { ...EXCEPTION, detectionSource: 'ML', ruleId: null, ruleName: null, riskCategory: 'BEHAVIOURAL_ANOMALY',
+        severity: 'HIGH', anomalyScore: 0.712, anomalyPriority: 'HIGH' },
+      rule: null, execution: null, linkedTransactions: [],
+      details: { anomalyScore: 0.712, priority: 'HIGH', modelVersion: 'IF-1', thresholds: { anomaly: 0.55 },
+        scoreNote: 'It is not a probability of fraud.', explanationMethod: 'Robust z-score',
+        factors: [{ feature: 'tx_last_hour', label: 'Transactions in the preceding hour',
+          description: '18 other transactions on the account in the preceding hour', value: 18, typical: 0,
+          deviation: 12.5 }] },
+    }));
+    expect(fixture.componentInstance.isModel()).toBeTrue();
+    expect(el.textContent).toContain('0.712');
+    expect(el.textContent).toContain('18 other transactions on the account in the preceding hour');
+    expect(el.textContent).toContain('not a probability of fraud');
+    expect(el.textContent).toContain('the anomaly detection model');
+    expect(fixture.componentInstance.facts()).toEqual([]);
+  });
+
   it('rejects malformed identifiers without calling the API', () => {
     const { el, api } = setup(detail(), 'abc');
     expect(api.exception).not.toHaveBeenCalled();

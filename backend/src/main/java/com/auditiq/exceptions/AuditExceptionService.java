@@ -50,6 +50,7 @@ public class AuditExceptionService {
             "detectedAt", "e.detected_at",
             "transactionDate", "t.transaction_date",
             "amount", "t.transaction_amount",
+            "anomalyScore", "ap.anomaly_score",
             "severity", "array_position(ARRAY['LOW','MEDIUM','HIGH','CRITICAL']::varchar[], e.severity)");
 
     private static final int ACTIVITY_DAYS = 7;
@@ -65,11 +66,14 @@ public class AuditExceptionService {
             SELECT e.id, e.exception_ref, e.detection_source, e.rule_id, r.rule_name, e.transaction_id, e.account_id,
                    t.transaction_date, t.transaction_amount, t.transaction_type, e.severity, e.risk_category, e.status,
                    e.reason, e.detected_at, i.id AS inv_id, i.investigation_ref, i.status AS inv_status,
-                   u.full_name AS inv_assignee
+                   u.full_name AS inv_assignee, ap.anomaly_score, ap.priority AS anomaly_priority
             """ + FROM + """
              LEFT JOIN LATERAL (SELECT id, investigation_ref, status, assigned_to FROM investigations
                                 WHERE exception_id = e.id ORDER BY created_at DESC, id DESC LIMIT 1) i ON true
              LEFT JOIN users u ON u.id = i.assigned_to
+             LEFT JOIN LATERAL (SELECT p.anomaly_score, p.priority FROM anomaly_predictions p
+                                JOIN ml_model_versions m ON m.id = p.model_version_id AND m.is_active
+                                WHERE p.transaction_id = e.transaction_id LIMIT 1) ap ON true
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -88,7 +92,7 @@ public class AuditExceptionService {
         var params = new MapSqlParameterSource();
         String where = where(filter, params);
         long total = jdbc.queryForObject("SELECT count(*)" + FROM + where, params, Long.class);
-        String orderBy = SORTS.getOrDefault(sort, "e.detected_at") + (ascending ? " ASC" : " DESC");
+        String orderBy = SORTS.getOrDefault(sort, "e.detected_at") + (ascending ? " ASC" : " DESC") + " NULLS LAST";
         params.addValue("limit", size).addValue("offset", (long) page * size);
         List<ExceptionRow> rows = jdbc.query(ROW_SELECT + where + " ORDER BY " + orderBy
                 + ", e.id DESC LIMIT :limit OFFSET :offset", params, ROW_MAPPER);
@@ -242,7 +246,8 @@ public class AuditExceptionService {
             rs.getString("rule_name"), rs.getString("transaction_id"), rs.getString("account_id"),
             instant(rs, "transaction_date"), rs.getBigDecimal("transaction_amount"), rs.getString("transaction_type"),
             rs.getString("severity"), rs.getString("risk_category"), rs.getString("status"), rs.getString("reason"),
-            instant(rs, "detected_at"), rs.getObject("inv_id") == null ? null : new InvestigationLink(
+            instant(rs, "detected_at"), rs.getBigDecimal("anomaly_score"), rs.getString("anomaly_priority"),
+            rs.getObject("inv_id") == null ? null : new InvestigationLink(
                     rs.getLong("inv_id"), rs.getString("investigation_ref"), rs.getString("inv_status"),
                     rs.getString("inv_assignee")));
 

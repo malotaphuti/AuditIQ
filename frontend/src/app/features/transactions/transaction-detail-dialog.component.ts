@@ -56,6 +56,17 @@ import { HumanizePipe } from '../../shared/humanize.pipe';
           </section>
         </div>
 
+        <h3>Anomaly model</h3>
+        @if (d.anomaly; as a) {
+          <p class="small">
+            Score <strong>{{ a.score | number: '1.3-3' }}</strong> from model {{ a.modelVersion }} ·
+            {{ a.flagged ? (a.priority | humanize) + ' priority' : 'below the flag threshold' }}.
+            <span class="muted">The score measures unusualness, not the probability of fraud.</span>
+          </p>
+        } @else {
+          <p class="muted small">No anomaly model has scored this transaction yet.</p>
+        }
+
         <h3>Audit exceptions</h3>
         @if (d.exceptions.length === 0) {
           <p class="muted small">No potential exceptions are linked to this transaction.</p>

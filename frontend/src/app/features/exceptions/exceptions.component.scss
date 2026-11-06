@@ -2,6 +2,12 @@
   display: block;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .page-header button mat-spinner {
   display: inline-block;
   margin-right: 8px;

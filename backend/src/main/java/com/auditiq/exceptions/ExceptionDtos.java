@@ -21,7 +21,8 @@ public final class ExceptionDtos {
     public record ExceptionRow(long id, String exceptionRef, String detectionSource, String ruleId, String ruleName,
                                String transactionId, String accountId, Instant transactionDate, BigDecimal amount,
                                String transactionType, String severity, String riskCategory, String status,
-                               String reason, Instant detectedAt, InvestigationLink investigation) {
+                               String reason, Instant detectedAt, BigDecimal anomalyScore, String anomalyPriority,
+                               InvestigationLink investigation) {
     }
 
     public record InvestigationLink(long id, String investigationRef, String status, String assignedTo) {

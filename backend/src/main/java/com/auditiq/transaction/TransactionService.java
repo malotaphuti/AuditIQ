@@ -15,6 +15,7 @@ import com.auditiq.audit.AuditLogService;
 import com.auditiq.common.Exceptions.NotFoundException;
 import com.auditiq.common.PageResponse;
 import com.auditiq.transaction.TransactionDtos.AccountInfo;
+import com.auditiq.transaction.TransactionDtos.AnomalyScore;
 import com.auditiq.transaction.TransactionDtos.Bucket;
 import com.auditiq.transaction.TransactionDtos.ExceptionRef;
 import com.auditiq.transaction.TransactionDtos.Lineage;
@@ -114,8 +115,15 @@ public class TransactionService {
                 rs.getString("detection_source"), rs.getString("rule_id"), rs.getString("severity"),
                 rs.getString("risk_category"), rs.getString("status"), instant(rs, "detected_at")));
 
+        AnomalyScore anomaly = jdbc.query("""
+                SELECT p.anomaly_score, p.priority, p.is_anomaly, m.version FROM anomaly_predictions p
+                JOIN ml_model_versions m ON m.id = p.model_version_id AND m.is_active
+                WHERE p.transaction_id = :id
+                """, params, (rs, i) -> new AnomalyScore(rs.getBigDecimal(1), rs.getString(2), rs.getBoolean(3),
+                rs.getString(4))).stream().findFirst().orElse(null);
+
         audit.record(AuditAction.TRANSACTION_VIEWED, "TRANSACTION", transactionId, Map.of());
-        return new TransactionDetail(row, account, merchant, lineage, exceptions);
+        return new TransactionDetail(row, account, merchant, lineage, exceptions, anomaly);
     }
 
     @Transactional(readOnly = true)

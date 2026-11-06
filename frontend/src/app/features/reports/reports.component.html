@@ -1,0 +1,268 @@
+<header class="page-header">
+  <div>
+    <h1>Reports</h1>
+    <p class="subtitle">Anomaly model performance, measured against the synthetic ground truth and compared with the audit rules.</p>
+  </div>
+  @if (canRun) {
+    <div class="actions">
+      <button mat-stroked-button (click)="train()" [disabled]="busy() !== null">
+        @if (busy() === 'train') { <mat-spinner diameter="18" aria-label="Training" /> } @else { <mat-icon>model_training</mat-icon> }
+        {{ busy() === 'train' ? 'Training…' : 'Train new model' }}
+      </button>
+      <button mat-flat-button (click)="detect()" [disabled]="busy() !== null || noModel()">
+        @if (busy() === 'detect') { <mat-spinner diameter="18" aria-label="Scoring" /> } @else { <mat-icon>radar</mat-icon> }
+        {{ busy() === 'detect' ? 'Scoring…' : 'Run anomaly detection' }}
+      </button>
+    </div>
+  }
+</header>
+
+@if (loading() && !perf()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading model performance" />
+}
+
+@if (noModel()) {
+  <section class="panel">
+    <app-empty-state icon="model_training" title="No anomaly model trained yet"
+      [message]="canRun ? 'Train the Isolation Forest model on the loaded transactions to see its performance.' : 'An auditor or administrator can train the model once transactions are loaded.'" />
+  </section>
+} @else if (error()) {
+  <section class="panel">
+    <app-empty-state icon="error_outline" title="Model performance unavailable" [message]="error()!">
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </app-empty-state>
+  </section>
+}
+
+@if (perf(); as p) {
+  <aside class="notice" role="note">
+    <mat-icon aria-hidden="true">info</mat-icon>
+    <p>
+      {{ p.scoreNote }} The synthetic ground-truth labels are used only to produce this evaluation; the model never
+      sees them. Results describe performance on synthetic data, not on real banking activity.
+    </p>
+  </aside>
+
+  <section class="panel model">
+    <div class="model-head">
+      <div>
+        <h2>{{ p.version }} @if (p.active) { <span class="chip st-RESOLVED">Active</span> }</h2>
+        <p class="muted small">
+          {{ p.algorithm }} trained {{ p.trainedAt | date: 'medium' }} by {{ p.trainedBy }} on
+          {{ p.trainingRows | number }} transactions · {{ hyperparameters(p) }}
+        </p>
+      </div>
+      <div class="thresholds small">
+        Flag at score ≥ <strong>{{ p.thresholds.anomaly }}</strong> · Medium ≥ <strong>{{ p.thresholds.medium }}</strong>
+        · High ≥ <strong>{{ p.thresholds.high }}</strong><br />
+        Exceptions raised from <strong>{{ p.exceptionMinPriority | humanize }}</strong> priority
+      </div>
+    </div>
+    <details>
+      <summary>{{ p.features.length }} behavioural features</summary>
+      <ul class="features">
+        @for (f of p.features; track f.name) { <li>{{ f.label }}</li> }
+      </ul>
+    </details>
+  </section>
+
+  @if (p.groundTruthAvailable && p.metrics && p.confusionMatrix) {
+    <section class="kpis" aria-label="Model metrics">
+      <article class="kpi">
+        <span class="kpi-label">ROC AUC</span>
+        <span class="kpi-value">{{ p.metrics.rocAuc | number: '1.3-3' }}</span>
+        <span class="kpi-foot">Ranking quality across all thresholds</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Precision</span>
+        <span class="kpi-value">{{ p.metrics.precision | percent: '1.1-1' }}</span>
+        <span class="kpi-foot">Flagged that are injected anomalies</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">Recall</span>
+        <span class="kpi-value">{{ p.metrics.recall | percent: '1.1-1' }}</span>
+        <span class="kpi-foot">Injected anomalies that were flagged</span>
+      </article>
+      <article class="kpi">
+        <span class="kpi-label">F1 score</span>
+        <span class="kpi-value">{{ p.metrics.f1 | number: '1.3-3' }}</span>
+        <span class="kpi-foot">At score ≥ {{ p.thresholds.anomaly }} · AP {{ p.metrics.averagePrecision | number: '1.3-3' }}</span>
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>Confusion matrix</h2>
+        <p class="muted small">{{ p.scoredTransactions | number }} transactions scored · {{ p.labelledAnomalies | number }} injected anomalies</p>
+        <table class="matrix">
+          <thead>
+            <tr><th></th><th scope="col">Flagged</th><th scope="col">Not flagged</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Injected anomaly</th>
+              <td class="good">{{ p.confusionMatrix.truePositive | number }}<span>true positive</span></td>
+              <td class="bad">{{ p.confusionMatrix.falseNegative | number }}<span>false negative</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Ordinary</th>
+              <td class="bad">{{ p.confusionMatrix.falsePositive | number }}<span>false positive</span></td>
+              <td class="good">{{ p.confusionMatrix.trueNegative | number }}<span>true negative</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel">
+        <h2>Priority bands</h2>
+        <p class="muted small">Precision falls as the score threshold drops, which is why priorities differ.</p>
+        <table class="data">
+          <thead><tr><th>Priority</th><th class="num">Score from</th><th class="num">Flagged</th><th class="num">Injected</th><th>Precision</th></tr></thead>
+          <tbody>
+            @for (b of p.priorityBands; track b.priority) {
+              <tr>
+                <td><span class="chip" [class]="'sev-' + b.priority">{{ b.priority | humanize }}</span></td>
+                <td class="num">{{ b.from }}</td>
+                <td class="num">{{ b.flagged | number }}</td>
+                <td class="num">{{ b.labelledAnomalies | number }}</td>
+                <td>
+                  @if (b.precision !== null) {
+                    <span class="inline-bar"><span [style.width.%]="b.precision * 100"></span></span>
+                    {{ b.precision | percent: '1.0-0' }}
+                  } @else { — }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </article>
+    </section>
+  }
+
+  @if (p.scoreDistribution.length) {
+    <section class="panel">
+      <h2>Score distribution</h2>
+      <p class="muted small">Dashed lines mark the flag, medium and high thresholds. The two groups use separate scales.</p>
+      <div class="grid two multiples">
+        @if (p.groundTruthAvailable) {
+          <div>
+            <h3>Injected anomalies</h3>
+            <app-histogram [bins]="labelledBins()" [markers]="markers()" label="Anomaly scores of injected anomalies"
+              unit="injected anomalies" />
+          </div>
+        }
+        <div>
+          <h3>{{ p.groundTruthAvailable ? 'Other transactions' : 'All transactions' }}</h3>
+          <app-histogram [bins]="otherBins()" [markers]="markers()" label="Anomaly scores of other transactions" />
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (p.comparison; as c) {
+    <section class="panel">
+      <h2>Model compared with the SQL audit rules</h2>
+      @if (!c.rulesExecuted) {
+        <p class="muted">The audit rules have not been run yet. <a routerLink="/exceptions">Run them on Audit Exceptions</a> to compare.</p>
+      } @else {
+        <div class="grid two">
+          <div>
+            <table class="data">
+              <thead><tr><th>Detector</th><th class="num">Flagged</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr></thead>
+              <tbody>
+                <tr><td>Audit rules (any rule)</td><td class="num">{{ c.rules?.flagged | number }}</td>
+                  <td class="num">{{ c.rules?.precision | percent: '1.1-1' }}</td><td class="num">{{ c.rules?.recall | percent: '1.1-1' }}</td>
+                  <td class="num">{{ c.rules?.f1 | number: '1.3-3' }}</td></tr>
+                <tr><td>Anomaly model</td><td class="num">{{ c.model.flagged | number }}</td>
+                  <td class="num">{{ c.model.precision | percent: '1.1-1' }}</td><td class="num">{{ c.model.recall | percent: '1.1-1' }}</td>
+                  <td class="num">{{ c.model.f1 | number: '1.3-3' }}</td></tr>
+                <tr><td>Either</td><td class="num">{{ c.combined?.flagged | number }}</td>
+                  <td class="num">{{ c.combined?.precision | percent: '1.1-1' }}</td><td class="num">{{ c.combined?.recall | percent: '1.1-1' }}</td>
+                  <td class="num">{{ c.combined?.f1 | number: '1.3-3' }}</td></tr>
+              </tbody>
+            </table>
+            <p class="muted small">
+              The rules were designed around the same patterns the generator injects, so they are expected to score
+              highly on this synthetic data. The model has no prior knowledge of the patterns.
+            </p>
+          </div>
+          <div>
+            <h3>Injected anomalies by detector</h3>
+            <app-bar-list [items]="overlap()" [humanizeKeys]="false" label="Injected anomalies by detector" />
+          </div>
+        </div>
+      }
+
+      @if (p.recallByType?.length) {
+        <h3>Recall by anomaly type</h3>
+        <table class="data">
+          <thead><tr><th>Injected pattern</th><th class="num">Count</th><th>Anomaly model</th><th>Audit rules</th></tr></thead>
+          <tbody>
+            @for (r of p.recallByType; track r.anomalyType) {
+              <tr>
+                <td>{{ r.anomalyType | humanize }}</td>
+                <td class="num">{{ r.labelled | number }}</td>
+                <td><span class="inline-bar"><span [style.width.%]="r.modelRecall * 100"></span></span>{{ r.modelRecall | percent: '1.0-0' }}</td>
+                <td>
+                  @if (c.rulesExecuted) {
+                    <span class="inline-bar"><span [style.width.%]="r.ruleRecall * 100"></span></span>{{ r.ruleRecall | percent: '1.0-0' }}
+                  } @else { — }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+
+  @if (p.falsePositives; as fp) {
+    <section class="panel">
+      <h2>False positive analysis</h2>
+      <p class="muted small">
+        {{ fp.count | number }} flagged transactions ({{ fp.share | percent: '1.0-0' }} of flags) are not injected
+        anomalies; median score {{ fp.scoreMedian | number: '1.3-3' }}; {{ fp.alsoFlaggedByRules | number }} were also
+        flagged by a rule. Most sit in the low-priority band, which is why exceptions are raised only from
+        {{ p.exceptionMinPriority | humanize | lowercase }} priority.
+      </p>
+      <div class="grid three">
+        <div><h3>Leading factor</h3><app-bar-list [items]="fpByFactor()" [humanizeKeys]="false" [limit]="6" label="False positives by leading factor" /></div>
+        <div><h3>Transaction type</h3><app-bar-list [items]="fpByType()" label="False positives by transaction type" /></div>
+        <div><h3>Channel</h3><app-bar-list [items]="fpByChannel()" label="False positives by channel" /></div>
+      </div>
+    </section>
+  }
+}
+
+@if (versions().length) {
+  <section class="panel">
+    <h2>Model versions</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr><th>Version</th><th>Trained</th><th>By</th><th class="num">Rows</th><th class="num">Precision</th>
+            <th class="num">Recall</th><th class="num">ROC AUC</th><th class="num">Exceptions</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (v of versions(); track v.id) {
+            <tr [class.selected]="v.id === selectedVersion()">
+              <td><code>{{ v.version }}</code> @if (v.active) { <span class="chip st-RESOLVED">Active</span> }</td>
+              <td>{{ v.trainedAt | date: 'd MMM yyyy, HH:mm' }}</td>
+              <td>{{ v.trainedBy }}</td>
+              <td class="num">{{ v.trainingRows | number }}</td>
+              <td class="num">{{ v.metrics.metrics?.precision | percent: '1.1-1' }}</td>
+              <td class="num">{{ v.metrics.metrics?.recall | percent: '1.1-1' }}</td>
+              <td class="num">{{ v.metrics.metrics?.rocAuc | number: '1.3-3' }}</td>
+              <td class="num">{{ v.exceptions | number }}</td>
+              <td>
+                @if (v.id !== selectedVersion()) {
+                  <button mat-button (click)="view(v)">View</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
